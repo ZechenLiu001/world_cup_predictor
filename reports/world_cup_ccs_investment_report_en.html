@@ -39,14 +39,15 @@
 <body>
 <main class="page">
 <div class="eyebrow">World Cup predictor research memo</div>
-<h1>Champion-chain signal: a sharper pre-tournament filter than rank alone</h1>
-<p class="subhead">A reproducible backtest of the Champion-Chain Signal (CCS), plus a practical 1998 to 2026 pre-tournament lens for identifying highly ranked teams that deserve a champion-probability downgrade.</p>
+<h1>Champion-chain signal: a pre-tournament filter for real title contenders</h1>
+<p class="subhead">A reproducible backtest of the Champion-Chain Signal (CCS), plus a practical 1998 to 2026 pre-tournament lens for identifying recognizable contenders that deserve a champion-probability downgrade.</p>
 
 <section class="summary">
 <h2>Executive Summary</h2>
 <ul>
 <li><strong>CCS is a candidate-pool filter, not a champion picker.</strong> In the 1986-2022 modern knockout era, CCS retained only 30.1% of team-tournaments but covered 9/10 (90.0%) of all champions; after excluding the one no-prior-history case, coverage was 9/9 (100.0%).</li>
 <li><strong>The result is not a random one-third screen.</strong> A random candidate pool with each year's same size would expect only 3.0 champion hits out of 10; the probability of randomly reaching at least 9 hits is 0.012%.</li>
+<li><strong>A stronger simulation still supports the signal, but with humility.</strong> After preserving the mix of traditional title contenders and ordinary teams, a label-permutation control expects 4.0 hits out of 6 evaluable champions; reaching 6/6 is a 8.2% event.</li>
 <li><strong>The most useful reader experience is the pre-tournament downgrade list.</strong> From 1998 onward, a long list of recognizable contenders were highly ranked but non-CCS at kickoff. Many still advanced, including finalists, but none won in the modern sample.</li>
 <li><strong>The mechanism is partly strength, but more specific than strength.</strong> CCS overlaps with elite teams, yet it asks a narrower question: has this team recently been on, or directly removed from, the champion path?</li>
 </ul>
@@ -63,10 +64,13 @@
 <p><strong>The primary backtest pattern is monotonic.</strong> CCS teams are about three-tenths of the field, but their share rises at every deeper stage: round of 16, quarter-finals, semi-finals, final, and champion. This makes the signal more useful as a championship filter than as a generic knockout-stage prediction tool.</p>
 <div class="figure"><img src="assets/01_modern_funnel_en.png" alt="CCS modern stage funnel"><div class="caption">Modern era is 1986-2022. Champion coverage is 9/10 on the all-champion denominator and 9/9 after removing France 1998, which had no prior-two-World-Cup finals history.</div></div>
 
-<h2>2. The random benchmark explains why 9/10 matters</h2>
-<p><strong>A same-size random pool is the right first hurdle.</strong> If 1998 has 11 CCS candidates out of 32 teams, the random benchmark also randomly selects 11 of 32. Repeating that across the ten modern tournaments yields an expected 3.0 champion hits, not nine. Hitting at least nine by chance is a 0.012% event.</p>
+<h2>2. Method and simulation: stronger than random, not proof by itself</h2>
+<p><strong>The method has two layers.</strong> First, CCS is defined before the tournament from the prior two World Cups only: a team qualifies if it recently won the World Cup or was knocked out by a later finalist. Second, the report tests whether that pre-tournament label covers champions better than no-information and strong-team controls.</p>
+<p><strong>A same-size random pool is the first hurdle.</strong> If 1998 has 11 CCS candidates out of 32 teams, the random benchmark also randomly selects 11 of 32. Repeating that across the ten modern tournaments yields an expected 3.0 champion hits, not nine. Hitting at least nine by chance is a 0.012% event.</p>
 <div class="figure"><img src="assets/02_random_benchmark_en.png" alt="Random benchmark chart"><div class="caption">The benchmark preserves each year's candidate-pool size, so it tests information content rather than simply rewarding CCS for selecting more teams.</div></div>
-<div class="callout warn"><strong>Interpretation discipline:</strong> this proves CCS beats a no-information random screen. It does not prove CCS beats Elo, betting odds, or a full multivariate model. The next bar is incremental value versus those stronger baselines.</div>
+<p><strong>The stronger control asks whether CCS is merely a famous-team label.</strong> For each tournament from 1998 to 2022, we preserve the number of CCS labels inside the traditional title-contender set and outside it, then randomly permute the labels inside those two groups. Excluding the explicit France 1998 no-prior-history exception, CCS hit 6/6 evaluable champions; the strong-label permutation expects 4.0/6, and reaches 6/6 with probability 8.2%.</p>
+<div class="figure"><img src="assets/05_contender_permutation_en.png" alt="Strong-team permutation simulation"><div class="caption">This is deliberately not a FIFA-ranking simulation. It controls for the broader fact that CCS often overlaps with obvious football powers, then asks whether the specific champion-chain label still carries information.</div></div>
+<div class="callout warn"><strong>Interpretation discipline:</strong> these simulations support CCS as a credible screening heuristic. They do not prove it beats Elo, betting odds, or a full multivariate model. The next bar is incremental value versus those stronger baselines.</div>
 
 <h2>3. The pre-tournament experience: recognizable favorites CCS would downgrade</h2>
 <p><strong>This is the most intuitive way to use the method.</strong> Before kickoff, a team can be highly ranked, historically recognizable, and still lack a recent champion-chain connection. The main exhibit is curated from a Top-20 non-CCS audit pool to show the teams a modern audience would naturally treat as title-relevant: Argentina, Germany, England, Spain, Portugal, Netherlands, Belgium, Colombia, Croatia, and Uruguay.</p>
@@ -437,7 +441,6 @@
 <h2>5. Why this happens: strength matters, but path matters too</h2>
 <p><strong>CCS partly captures strength, and that should be acknowledged.</strong> Champions, finalists, and teams beaten by finalists are usually strong teams. A signal built from those events will naturally overlap with FIFA ranking, odds, and historical reputation.</p>
 <p><strong>But CCS is not simply 'teams that often qualify' or 'teams that are highly ranked.'</strong> It requires a specific recent relationship to the champion path: either winning the World Cup or being knocked out by a finalist. A team can be ranked highly, qualify regularly, or have reached a quarter-final and still be non-CCS if it did not touch that path.</p>
-<div class="figure"><img src="assets/05_rank_bucket_control_en.png" alt="Rank bucket control"><div class="caption">FIFA ranking and CCS overlap, especially near the top, but the split inside the top-ranked buckets creates the practical downgrade list.</div></div>
 <p><strong>The proposed mechanism is tournament-cycle validation.</strong> Recent champion-chain contact is a proxy for having already met World Cup knockout intensity against finalist-level opposition. It is not causal proof; it is a compact historical state variable that seems especially relevant for champions rather than finalists.</p>
 
 <h2>Recommended Next Steps</h2>

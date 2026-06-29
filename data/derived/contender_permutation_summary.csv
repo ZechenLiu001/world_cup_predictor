@@ -1,0 +1,3 @@
+scope,champions_considered,actual_hits,expected_permutation_hits,probability_ge_actual_exact,probability_ge_actual_simulated,simulation_runs
+all_1998_2022,7,6,4.651748251748252,0.2517591799635376,0.25284,200000
+evaluable_ex_france_1998,6,6,4.015384615384615,0.08155811131017744,0.08213,200000

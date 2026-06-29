@@ -42,3 +42,5 @@ The 2026 view uses the June 11, 2026 FIFA ranking as the frozen pre-tournament r
 - FIFA ranking comparisons are used as a strong-team baseline and reader-facing sanity check, not as a full predictive model.
 - The favorite-downgrade exhibit is curated from the Top-20 non-CCS audit pool to focus on recognizable strong teams/title-relevant football brands: Argentina, Germany, England, Spain, Portugal, Netherlands, Belgium, Colombia, Croatia, and Uruguay. The broader mechanical audit list is retained in `data/derived/favorite_traps.csv`.
 - The 2026 application separately highlights rank-strong non-CCS title names: Spain, Portugal, Brazil, Germany, and Colombia.
+- The contender-label permutation simulation controls for the simple "CCS just picks famous teams" explanation by preserving CCS counts inside and outside the traditional title-contender set, then randomizing labels within those groups.
+- FIFA rank is retained as an audit field, but the report's main narrative is title-contender recognition plus champion-chain path validation, not a ranking-table model.

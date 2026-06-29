@@ -329,6 +329,78 @@ def random_benchmark(modern_summary: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
+def poisson_binomial_distribution(probs: list[float]) -> np.ndarray:
+    dist = np.array([1.0])
+    for p in probs:
+        dist = np.convolve(dist, np.array([1 - p, p]))
+    return dist
+
+
+def contender_permutation_benchmark(joined: pd.DataFrame, modern_summary: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Control for the simple "it just picks famous teams" explanation.
+
+    Within each tournament, preserve how many CCS teams come from the curated
+    title-contender set and how many come from outside it, then randomize the
+    CCS label inside those two groups. The champion hit probability is therefore
+    the share of CCS labels inside the champion's own group.
+    """
+
+    detail_rows = []
+    for year in range(1998, 2023, 4):
+        teams = joined[joined["year"].eq(year)].copy()
+        teams["title_contender_set"] = teams["team_name"].isin(CURATED_HISTORICAL_CONTENDERS)
+        champion = modern_summary.loc[modern_summary["year"].eq(year), "champion"].iloc[0]
+        champion_row = teams[teams["team_name"].eq(champion)].iloc[0]
+        champion_group = bool(champion_row["title_contender_set"])
+        group = teams[teams["title_contender_set"].eq(champion_group)]
+        ccs_in_group = int(group["ccs"].sum())
+        teams_in_group = int(len(group))
+        perm_hit_probability = ccs_in_group / teams_in_group
+        detail_rows.append(
+            {
+                "year": year,
+                "champion": champion,
+                "actual_ccs_hit": int(champion_row["ccs"]),
+                "evaluable": not (year == 1998 and champion == "France"),
+                "champion_in_title_contender_set": champion_group,
+                "ccs_in_champion_group": ccs_in_group,
+                "teams_in_champion_group": teams_in_group,
+                "permutation_hit_probability": perm_hit_probability,
+                "ccs_candidates": int(teams["ccs"].sum()),
+                "title_contender_teams": int(teams["title_contender_set"].sum()),
+                "ccs_title_contender_teams": int((teams["ccs"].eq(1) & teams["title_contender_set"]).sum()),
+            }
+        )
+
+    detail = pd.DataFrame(detail_rows)
+    summary_rows = []
+    rng = np.random.default_rng(20260611)
+    for scope, sample in [
+        ("all_1998_2022", detail),
+        ("evaluable_ex_france_1998", detail[detail["evaluable"]]),
+    ]:
+        probs = sample["permutation_hit_probability"].tolist()
+        actual_hits = int(sample["actual_ccs_hit"].sum())
+        dist = poisson_binomial_distribution(probs)
+        simulated_hits = (rng.random((200_000, len(probs))) < np.array(probs)).sum(axis=1)
+        summary_rows.append(
+            {
+                "scope": scope,
+                "champions_considered": int(len(sample)),
+                "actual_hits": actual_hits,
+                "expected_permutation_hits": float(sum(probs)),
+                "probability_ge_actual_exact": float(dist[actual_hits:].sum()),
+                "probability_ge_actual_simulated": float((simulated_hits >= actual_hits).mean()),
+                "simulation_runs": 200_000,
+            }
+        )
+
+    summary = pd.DataFrame(summary_rows)
+    detail.to_csv(DATA_DERIVED / "contender_permutation_detail.csv", index=False)
+    summary.to_csv(DATA_DERIVED / "contender_permutation_summary.csv", index=False)
+    return detail, summary
+
+
 def build_favorite_traps(team_year: pd.DataFrame, rankings: pd.DataFrame) -> pd.DataFrame:
     joined = team_year.merge(
         rankings[["year", "team_name", "team_code", "fifa_rank", "fifa_points", "ranking_official_date"]],
@@ -498,24 +570,20 @@ def chart_favorite_traps(traps: pd.DataFrame, lang: str = "en") -> str:
     top = traps.copy()
     top["label"] = top["year"].astype(str) + " " + top["team_name"].map(lambda x: display_team(x, lang))
     top = top.sort_values(["year", "fifa_rank"])
-    max_rank = 20
-    top["strength_score"] = max_rank + 1 - top["fifa_rank"]
     fig, ax = plt.subplots(figsize=(11.5, 8.6))
     y = np.arange(len(top))
     colors = np.where(top["performance"].str.lower().eq("final"), "#d15532", "#67758a")
-    ax.barh(y, top["strength_score"], color=colors)
+    ax.barh(y, np.ones(len(top)), color=colors)
     ax.set_yticks(y)
     ax.set_yticklabels(top["label"])
     ax.invert_yaxis()
-    ax.set_xticks([1, 6, 11, 16, 20])
-    ax.set_xticklabels(["#20", "#15", "#10", "#5", "#1"])
-    ax.set_xlabel("赛前 FIFA 排名强度（越靠右越强）" if lang == "zh" else "Pre-tournament FIFA rank strength (farther right is stronger)")
+    ax.set_xlim(0, 1.28)
+    ax.set_xticks([])
     ax.set_title("一众强队/豪门但非 CCS：赛前可降权名单" if lang == "zh" else "A wall of recognizable contenders that CCS would have downgraded")
-    ax.grid(axis="x", color="#e8ebf1")
-    ax.spines[["top", "right"]].set_visible(False)
+    ax.spines[["top", "right", "bottom"]].set_visible(False)
     for i, (_, r) in enumerate(top.iterrows()):
         ax.text(
-            r["strength_score"] + 0.2,
+            1.02,
             i,
             f"#{int(r['fifa_rank'])} · {display_performance(r['performance'], lang)}",
             va="center",
@@ -529,16 +597,17 @@ def chart_2026_watchlist(watch: pd.DataFrame, lang: str = "en") -> str:
     fig, ax = plt.subplots(figsize=(11.5, 7.2))
     y = np.arange(len(top))
     colors = np.where(top["ccs"].eq(1), "#0b5cad", "#d15532")
-    ax.barh(y, 25 - top["fifa_rank"], color=colors)
+    ax.barh(y, np.ones(len(top)), color=colors)
     ax.set_yticks(y)
     ax.set_yticklabels([f"#{int(r.fifa_rank)} {display_team(r.team_name, lang)}" for r in top.itertuples()])
     ax.invert_yaxis()
+    ax.set_xlim(0, 1.18)
     ax.set_xticks([])
-    ax.set_title("2026 赛前强队：CCS 区分冠军链强队与单纯排名强队" if lang == "zh" else "2026 pre-tournament top-ranked teams: CCS separates strong overlap from rank-only strength")
+    ax.set_title("2026 赛前观察：哪些强队缺少 CCS 支持" if lang == "zh" else "2026 pre-tournament watchlist: which contenders lack CCS support")
     ax.spines[["top", "right", "bottom"]].set_visible(False)
     for i, r in enumerate(top.itertuples()):
         status = "CCS" if r.ccs else ("非CCS" if lang == "zh" else "Non-CCS")
-        ax.text(25 - r.fifa_rank + 0.25, i, status, va="center", fontsize=9, fontweight="bold")
+        ax.text(1.02, i, status, va="center", fontsize=9, fontweight="bold")
     from matplotlib.patches import Patch
 
     ax.legend(
@@ -546,10 +615,51 @@ def chart_2026_watchlist(watch: pd.DataFrame, lang: str = "en") -> str:
             Patch(color="#0b5cad", label="CCS 候选" if lang == "zh" else "CCS candidate"),
             Patch(color="#d15532", label="排名强但非 CCS" if lang == "zh" else "Ranked strong, non-CCS"),
         ],
-        loc="lower right",
+        loc="upper center",
+        bbox_to_anchor=(0.5, -0.02),
+        ncol=2,
         frameon=False,
     )
     return savefig(f"04_2026_watchlist_{lang}.png")
+
+
+def chart_contender_permutation(summary: pd.DataFrame, lang: str = "en") -> str:
+    row = summary[summary["scope"].eq("evaluable_ex_france_1998")].iloc[0]
+    actual = float(row["actual_hits"])
+    expected = float(row["expected_permutation_hits"])
+    total = int(row["champions_considered"])
+    tail = float(row["probability_ge_actual_exact"])
+    labels = ["CCS actual", "Strong-label permutation\nexpected"]
+    if lang == "zh":
+        labels = ["CCS 实际", "强队标签置换\n期望"]
+    fig, ax = plt.subplots(figsize=(9.5, 5.2))
+    bars = ax.bar(labels, [actual, expected], color=["#0b5cad", "#9aa6b2"], width=0.55)
+    ax.set_ylim(0, total + 0.8)
+    ax.set_ylabel(f"Champion hits out of {total}" if lang == "en" else f"{total} 个可判定冠军中的命中数")
+    ax.set_title(
+        "CCS still clears a stronger 'famous team' control"
+        if lang == "en"
+        else "控制“强队标签”后，CCS 仍高于置换基准"
+    )
+    ax.grid(axis="y", color="#e8ebf1")
+    ax.spines[["top", "right"]].set_visible(False)
+    for bar, value in zip(bars, [actual, expected]):
+        ax.annotate(
+            f"{value:.1f}/{total}",
+            (bar.get_x() + bar.get_width() / 2, bar.get_height()),
+            xytext=(0, 8),
+            textcoords="offset points",
+            ha="center",
+            fontsize=11,
+            fontweight="bold",
+        )
+    note = (
+        f"Permutation reaches {int(actual)}/{total}: {tail:.1%}"
+        if lang == "en"
+        else f"置换达到 {int(actual)}/{total} 的概率：{tail:.1%}"
+    )
+    ax.text(0.5, total + 0.25, note, ha="center", fontsize=10, color="#5b6575")
+    return savefig(f"05_contender_permutation_{lang}.png")
 
 
 def chart_rank_bucket(joined: pd.DataFrame, lang: str = "en") -> str:
@@ -687,14 +797,15 @@ def render_report_en(context: dict) -> str:
 <body>
 <main class="page">
 <div class="eyebrow">World Cup predictor research memo</div>
-<h1>Champion-chain signal: a sharper pre-tournament filter than rank alone</h1>
-<p class="subhead">A reproducible backtest of the Champion-Chain Signal (CCS), plus a practical 1998 to 2026 pre-tournament lens for identifying highly ranked teams that deserve a champion-probability downgrade.</p>
+<h1>Champion-chain signal: a pre-tournament filter for real title contenders</h1>
+<p class="subhead">A reproducible backtest of the Champion-Chain Signal (CCS), plus a practical 1998 to 2026 pre-tournament lens for identifying recognizable contenders that deserve a champion-probability downgrade.</p>
 
 <section class="summary">
 <h2>Executive Summary</h2>
 <ul>
 <li><strong>CCS is a candidate-pool filter, not a champion picker.</strong> In the 1986-2022 modern knockout era, CCS retained only {context['ccs_pool_share']} of team-tournaments but covered {context['champ_all']} of all champions; after excluding the one no-prior-history case, coverage was {context['champ_evaluable']}.</li>
 <li><strong>The result is not a random one-third screen.</strong> A random candidate pool with each year's same size would expect only {context['random_expected']} champion hits out of 10; the probability of randomly reaching at least 9 hits is {context['random_prob']}.</li>
+<li><strong>A stronger simulation still supports the signal, but with humility.</strong> After preserving the mix of traditional title contenders and ordinary teams, a label-permutation control expects {context['strong_sim_expected']} hits out of 6 evaluable champions; reaching 6/6 is a {context['strong_sim_prob']} event.</li>
 <li><strong>The most useful reader experience is the pre-tournament downgrade list.</strong> From 1998 onward, a long list of recognizable contenders were highly ranked but non-CCS at kickoff. Many still advanced, including finalists, but none won in the modern sample.</li>
 <li><strong>The mechanism is partly strength, but more specific than strength.</strong> CCS overlaps with elite teams, yet it asks a narrower question: has this team recently been on, or directly removed from, the champion path?</li>
 </ul>
@@ -711,10 +822,13 @@ def render_report_en(context: dict) -> str:
 <p><strong>The primary backtest pattern is monotonic.</strong> CCS teams are about three-tenths of the field, but their share rises at every deeper stage: round of 16, quarter-finals, semi-finals, final, and champion. This makes the signal more useful as a championship filter than as a generic knockout-stage prediction tool.</p>
 <div class="figure"><img src="{context['fig_funnel_en']}" alt="CCS modern stage funnel"><div class="caption">Modern era is 1986-2022. Champion coverage is 9/10 on the all-champion denominator and 9/9 after removing France 1998, which had no prior-two-World-Cup finals history.</div></div>
 
-<h2>2. The random benchmark explains why 9/10 matters</h2>
-<p><strong>A same-size random pool is the right first hurdle.</strong> If 1998 has 11 CCS candidates out of 32 teams, the random benchmark also randomly selects 11 of 32. Repeating that across the ten modern tournaments yields an expected {context['random_expected']} champion hits, not nine. Hitting at least nine by chance is a {context['random_prob']} event.</p>
+<h2>2. Method and simulation: stronger than random, not proof by itself</h2>
+<p><strong>The method has two layers.</strong> First, CCS is defined before the tournament from the prior two World Cups only: a team qualifies if it recently won the World Cup or was knocked out by a later finalist. Second, the report tests whether that pre-tournament label covers champions better than no-information and strong-team controls.</p>
+<p><strong>A same-size random pool is the first hurdle.</strong> If 1998 has 11 CCS candidates out of 32 teams, the random benchmark also randomly selects 11 of 32. Repeating that across the ten modern tournaments yields an expected {context['random_expected']} champion hits, not nine. Hitting at least nine by chance is a {context['random_prob']} event.</p>
 <div class="figure"><img src="{context['fig_random_en']}" alt="Random benchmark chart"><div class="caption">The benchmark preserves each year's candidate-pool size, so it tests information content rather than simply rewarding CCS for selecting more teams.</div></div>
-<div class="callout warn"><strong>Interpretation discipline:</strong> this proves CCS beats a no-information random screen. It does not prove CCS beats Elo, betting odds, or a full multivariate model. The next bar is incremental value versus those stronger baselines.</div>
+<p><strong>The stronger control asks whether CCS is merely a famous-team label.</strong> For each tournament from 1998 to 2022, we preserve the number of CCS labels inside the traditional title-contender set and outside it, then randomly permute the labels inside those two groups. Excluding the explicit France 1998 no-prior-history exception, CCS hit 6/6 evaluable champions; the strong-label permutation expects {context['strong_sim_expected']}/6, and reaches 6/6 with probability {context['strong_sim_prob']}.</p>
+<div class="figure"><img src="{context['fig_sim_en']}" alt="Strong-team permutation simulation"><div class="caption">This is deliberately not a FIFA-ranking simulation. It controls for the broader fact that CCS often overlaps with obvious football powers, then asks whether the specific champion-chain label still carries information.</div></div>
+<div class="callout warn"><strong>Interpretation discipline:</strong> these simulations support CCS as a credible screening heuristic. They do not prove it beats Elo, betting odds, or a full multivariate model. The next bar is incremental value versus those stronger baselines.</div>
 
 <h2>3. The pre-tournament experience: recognizable favorites CCS would downgrade</h2>
 <p><strong>This is the most intuitive way to use the method.</strong> Before kickoff, a team can be highly ranked, historically recognizable, and still lack a recent champion-chain connection. The main exhibit is curated from a Top-20 non-CCS audit pool to show the teams a modern audience would naturally treat as title-relevant: Argentina, Germany, England, Spain, Portugal, Netherlands, Belgium, Colombia, Croatia, and Uruguay.</p>
@@ -732,7 +846,6 @@ def render_report_en(context: dict) -> str:
 <h2>5. Why this happens: strength matters, but path matters too</h2>
 <p><strong>CCS partly captures strength, and that should be acknowledged.</strong> Champions, finalists, and teams beaten by finalists are usually strong teams. A signal built from those events will naturally overlap with FIFA ranking, odds, and historical reputation.</p>
 <p><strong>But CCS is not simply 'teams that often qualify' or 'teams that are highly ranked.'</strong> It requires a specific recent relationship to the champion path: either winning the World Cup or being knocked out by a finalist. A team can be ranked highly, qualify regularly, or have reached a quarter-final and still be non-CCS if it did not touch that path.</p>
-<div class="figure"><img src="{context['fig_rank_bucket_en']}" alt="Rank bucket control"><div class="caption">FIFA ranking and CCS overlap, especially near the top, but the split inside the top-ranked buckets creates the practical downgrade list.</div></div>
 <p><strong>The proposed mechanism is tournament-cycle validation.</strong> Recent champion-chain contact is a proxy for having already met World Cup knockout intensity against finalist-level opposition. It is not causal proof; it is a compact historical state variable that seems especially relevant for champions rather than finalists.</p>
 
 <h2>Recommended Next Steps</h2>
@@ -781,14 +894,15 @@ def render_report_zh(context: dict) -> str:
 <body>
 <main class="page">
 <div class="eyebrow">世界杯预测研究备忘录</div>
-<h1>冠军链信号：比单纯世界排名更锋利的赛前冠军候选过滤器</h1>
-<p class="subhead">本报告对世界杯 Champion-Chain Signal（CCS）做可复现回测，并把它转化为 1998 至 2026 的赛前使用框架：哪些排名很高、舆论很热的球队，实际上应在夺冠概率上被降权。</p>
+<h1>冠军链信号：一个赛前冠军候选过滤器</h1>
+<p class="subhead">本报告对世界杯 Champion-Chain Signal（CCS）做可复现回测，并把它转化为 1998 至 2026 的赛前使用框架：哪些声望强、舆论热、看起来像冠军候选的球队，实际上应在夺冠概率上被降权。</p>
 
 <section class="summary">
 <h2>执行摘要</h2>
 <ul>
 <li><strong>CCS 是冠军候选池过滤器，不是单点冠军预测器。</strong> 在 1986-2022 现代淘汰赛时代，CCS 只保留 {context['ccs_pool_share']} 的球队-届次，却覆盖全部现代冠军中的 {context['champ_all']}；若剔除唯一“前两届无可判定世界杯前史”的法国 1998，则为 {context['champ_evaluable']}。</li>
 <li><strong>这不是随机挑三成球队就能得到的结果。</strong> 若每届随机抽取与 CCS 同等规模的候选池，10 届期望只命中 {context['random_expected']} 个冠军；随机达到至少 9 次命中的概率只有 {context['random_prob']}。</li>
+<li><strong>更强的 simulation 也支持这个信号，但要克制解读。</strong> 在保留“传统强队/普通队”结构后随机置换 CCS 标签，6 个可判定冠军的期望命中为 {context['strong_sim_expected']} 个；达到 6/6 的概率为 {context['strong_sim_prob']}。</li>
 <li><strong>最有体感的用法，是赛前热门队降权清单。</strong> 1998 年以来，一众排名高、名气大、今天读者也会认为有冠军叙事的强队，在开赛前并非 CCS。它们并不一定弱，甚至可能进决赛，但现代样本里没有最终夺冠。</li>
 <li><strong>机制上，CCS 有强队效应，但比“强队”更窄。</strong> 它问的不是球队是否有名、排名是否高，而是它最近两届是否已经进入过冠军路径，或被冠军/亚军直接淘汰验证过。</li>
 </ul>
@@ -805,10 +919,13 @@ def render_report_zh(context: dict) -> str:
 <p><strong>核心回测形态是单调上升。</strong> CCS 球队约占全部参赛队三成，但从 16 强、8 强、4 强、决赛到冠军，其占比逐层上升。这意味着 CCS 更像“冠军过滤器”，而不是普通的淘汰赛晋级预测器。</p>
 <div class="figure"><img src="{context['fig_funnel_zh']}" alt="CCS modern stage funnel"><div class="caption">现代时代定义为 1986-2022。全部冠军口径为 9/10；剔除 1998 法国这一前两届无世界杯决赛圈前史样本后为 9/9。</div></div>
 
-<h2>2. 随机基准解释了为什么 9/10 有含金量</h2>
+<h2>2. 方法与 simulation：强于随机，但不是单独证明</h2>
+<p><strong>方法分两层。</strong> 第一，CCS 只使用赛前已知的前两届世界杯信息：球队若最近夺冠，或被后来的冠亚军淘汰，就进入冠军链候选池。第二，报告检验这个赛前标签是否比无信息随机池和“强队标签”控制更能覆盖冠军。</p>
 <p><strong>同规模随机候选池是第一道合理门槛。</strong> 如果 1998 年 CCS 候选池是 32 队中的 11 队，那么随机基准也只随机抽 11 队。把这个逻辑重复到 10 届现代世界杯，随机期望命中只有 {context['random_expected']} 个冠军，而不是 9 个；随机达到至少 9 次命中的概率仅 {context['random_prob']}。</p>
 <div class="figure"><img src="{context['fig_random_zh']}" alt="Random benchmark chart"><div class="caption">该基准保留每届实际 CCS 候选池规模，因此检验的是“信息量”，不是简单奖励候选池更大。</div></div>
-<div class="callout warn"><strong>解释边界：</strong> 随机基准只能证明 CCS 明显优于无信息随机筛选；它尚不能证明 CCS 优于 Elo、赔率或多变量模型。下一步应检验相对于强基准的增量价值。</div>
+<p><strong>更强的控制，是检验 CCS 是否只是“强队标签”。</strong> 对 1998-2022 每届世界杯，我们保留 CCS 在“传统冠军叙事队”和普通队中的数量，再在两个组内随机置换 CCS 标签。剔除法国 1998 这个明确无前史例外后，CCS 实际命中 6/6 个可判定冠军；强队标签置换的期望为 {context['strong_sim_expected']}/6，达到 6/6 的概率为 {context['strong_sim_prob']}。</p>
+<div class="figure"><img src="{context['fig_sim_zh']}" alt="Strong-team permutation simulation"><div class="caption">这不是世界排名 simulation。它控制的是“CCS 本来就会和传统强队重叠”这件事，再检验具体的冠军链标签是否还有额外信息。</div></div>
+<div class="callout warn"><strong>解释边界：</strong> 这些 simulation 支持 CCS 是一个可信的筛选启发式，但尚不能证明它优于 Elo、赔率或多变量模型。下一步应检验相对于强基准的增量价值。</div>
 
 <h2>3. 赛前使用体验：哪些强队/豪门应被 CCS 降权</h2>
 <p><strong>这是最容易让读者理解的方法使用场景。</strong> 开赛前，一支球队可以排名很高、历史声望很强、舆论很热，但仍然缺少最近两届的冠军链连接。主图从“FIFA Top 20 且非 CCS”的审计池里人工策展，重点保留今天读者也会自然认为与冠军叙事相关的强队：阿根廷、德国、英格兰、西班牙、葡萄牙、荷兰、比利时、哥伦比亚、克罗地亚、乌拉圭。</p>
@@ -826,7 +943,6 @@ def render_report_zh(context: dict) -> str:
 <h2>5. 为什么会这样：强队重要，但路径也重要</h2>
 <p><strong>首先要承认，CCS 确实部分捕捉了强队效应。</strong> 冠军、亚军，以及被冠亚军淘汰的球队，本来就往往是强队。因此 CCS 与 FIFA 排名、赔率、历史声望存在天然重叠。</p>
 <p><strong>但 CCS 并不等同于“经常入围”或“排名很高”。</strong> 它要求球队在最近两届与冠军路径发生过具体关系：自己夺冠，或被最终冠亚军淘汰。一个队可以排名高、经常参赛、甚至进过 8 强，但如果没有触碰冠军路径，仍然可能是非 CCS。</p>
-<div class="figure"><img src="{context['fig_rank_bucket_zh']}" alt="Rank bucket control"><div class="caption">FIFA 排名与 CCS 在头部队伍中有明显重叠，但排名桶内部的分化，正是赛前降权清单的来源。</div></div>
 <p><strong>更合理的机制解释是“锦标赛周期验证”。</strong> 最近两届与冠军链发生联系，意味着球队已经在世界杯淘汰赛强度下被冠军级对手验证过。这不是因果证明，而是一个紧凑的历史状态变量；它对冠军列尤其有解释力。</p>
 
 <h2>建议下一步</h2>
@@ -868,6 +984,7 @@ def main() -> None:
     modern = pd.read_csv(DATA_RAW / "modern_ccs.csv")
     random_df = random_benchmark(modern)
     joined = build_favorite_traps(team_year, rankings)
+    permutation_detail, permutation_summary = contender_permutation_benchmark(joined, modern)
     traps = pd.read_csv(DATA_DERIVED / "favorite_traps.csv")
     trap_headliners = pd.read_csv(DATA_DERIVED / "favorite_trap_headliners.csv")
     trap_powerhouses = pd.read_csv(DATA_DERIVED / "favorite_trap_powerhouses.csv")
@@ -886,19 +1003,23 @@ def main() -> None:
         "champ_evaluable": f"{int(champ_hits)}/{int(evaluable_total)} (100.0%)",
         "random_expected": f"{random_df['random_hit_probability'].sum():.1f}",
         "random_prob": f"{random_df['prob_random_ge_9_of_10'].iloc[0]:.3%}",
+        "strong_sim_expected": f"{permutation_summary.loc[permutation_summary['scope'].eq('evaluable_ex_france_1998'), 'expected_permutation_hits'].iloc[0]:.1f}",
+        "strong_sim_prob": f"{permutation_summary.loc[permutation_summary['scope'].eq('evaluable_ex_france_1998'), 'probability_ge_actual_exact'].iloc[0]:.1%}",
         "fig_funnel_en": chart_modern_funnel(modern, "en"),
         "fig_random_en": chart_random_benchmark(random_df, "en"),
         "fig_traps_en": chart_favorite_traps(trap_powerhouses, "en"),
         "fig_2026_en": chart_2026_watchlist(watch, "en"),
-        "fig_rank_bucket_en": chart_rank_bucket(joined, "en"),
+        "fig_sim_en": chart_contender_permutation(permutation_summary, "en"),
         "fig_funnel_zh": chart_modern_funnel(modern, "zh"),
         "fig_random_zh": chart_random_benchmark(random_df, "zh"),
         "fig_traps_zh": chart_favorite_traps(trap_powerhouses, "zh"),
         "fig_2026_zh": chart_2026_watchlist(watch, "zh"),
-        "fig_rank_bucket_zh": chart_rank_bucket(joined, "zh"),
+        "fig_sim_zh": chart_contender_permutation(permutation_summary, "zh"),
         "traps": traps,
         "trap_headliners": trap_headliners,
         "trap_powerhouses": trap_powerhouses,
+        "permutation_detail": permutation_detail,
+        "permutation_summary": permutation_summary,
         "watch_2026": watch,
         "downgrade_2026": downgrade_2026,
     }

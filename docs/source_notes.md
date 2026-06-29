@@ -33,7 +33,15 @@ The visible report merges findings and implications section-by-section so a read
 - `data/derived/favorite_trap_powerhouses.csv`: curated subset of the Top-20 non-CCS audit pool, focused on recognizable strong teams/title-relevant football brands for the main favorite-downgrade exhibit.
 - `data/derived/ccs_2026_downgrade_giants.csv`: 2026 rank-strong, reputation-strong non-CCS teams highlighted in the live application section.
 - `data/derived/random_benchmark.csv`: random same-size candidate-pool benchmark.
+- `data/derived/contender_permutation_detail.csv`: year-level strong-team-label permutation inputs and champion hit probabilities.
+- `data/derived/contender_permutation_summary.csv`: exact and simulated tail probabilities for the contender-label permutation benchmark.
 - `data/derived/ccs_2026_watchlist.csv`: 2026 ranked teams with CCS status.
+
+## Simulation Method
+
+The contender-label permutation benchmark asks whether CCS is merely selecting famous football powers. For each tournament from 1998 to 2022, teams are split into a curated traditional title-contender set and all other teams. The simulation preserves how many CCS labels appear in each split, then randomizes labels within the split. This keeps the broad strong-team mix intact while testing whether the specific champion-chain label carries additional information.
+
+France 1998 remains a documented no-prior-history exception and is excluded from the evaluable 6-of-6 simulation headline.
 
 ## Visualization QA
 

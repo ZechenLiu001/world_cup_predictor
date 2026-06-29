@@ -1,0 +1,8 @@
+year,champion,actual_ccs_hit,evaluable,champion_in_title_contender_set,ccs_in_champion_group,teams_in_champion_group,permutation_hit_probability,ccs_candidates,title_contender_teams,ccs_title_contender_teams
+1998,France,0,False,True,7,11,0.6363636363636364,11,11,7
+2002,Brazil,1,True,True,5,11,0.45454545454545453,10,11,5
+2006,Italy,1,True,True,7,10,0.7,10,10,7
+2010,Spain,1,True,True,7,10,0.7,11,10,7
+2014,Germany,1,True,True,8,13,0.6153846153846154,9,13,8
+2018,France,1,True,True,8,11,0.7272727272727273,9,11,8
+2022,Argentina,1,True,True,9,11,0.8181818181818182,11,11,9
