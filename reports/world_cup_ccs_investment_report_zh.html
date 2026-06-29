@@ -19,6 +19,11 @@
     .summary h2 { border:0; padding:0; margin:0 0 12px; }
     .summary ul { margin:0; padding-left:20px; }
     .summary li { margin: 9px 0; }
+    .lens-grid { display:grid; grid-template-columns: repeat(2, 1fr); gap:14px; margin:20px 0 24px; }
+    .lens { border:1px solid var(--line); border-radius:10px; padding:17px 18px; background:#fff; }
+    .lens .tag { color:var(--blue); font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.08em; }
+    .lens .metric { font-size:26px; font-weight:800; margin:7px 0 4px; color:var(--ink); }
+    .lens p { color:var(--muted); font-size:13px; margin:0; }
     .kpis { display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; margin: 24px 0 30px; }
     .kpi { border:1px solid var(--line); border-radius:10px; padding:14px 15px; background:#fff; }
     .kpi .value { font-size:25px; font-weight:800; color:var(--blue); }
@@ -43,12 +48,14 @@
 <main class="page">
 <div class="eyebrow">世界杯预测研究备忘录</div>
 <h1>冠军链信号：一个赛前冠军候选过滤器</h1>
-<p class="subhead">本报告论证一个更锋利的世界杯赛前排除规则：如果一支球队前两届都正常参加决赛圈，但两届里没有任何冠军/亚军路径接触，历史上还没有这样的球队在下一届夺冠。</p>
+<p class="subhead">本报告同时保留两个口径：纯 CCS 作为宽口径冠军候选池；“前两届都参赛”作为更严格的赛前排除规则。</p>
 
 <section class="summary">
 <h2>执行摘要</h2>
 <ul>
-<li><strong>最强结论是排除规则，不是单点冠军预测器。</strong> 1938-2022 年间，177 个球队-届次满足“前两届都参赛”；其中 112 个有冠军/亚军路径接触，65 个没有。后者成为下一届冠军的次数是 0。</li>
+<li><strong>报告现在明确分成两个口径。</strong> 口径 A 是纯 CCS：不要求前两届都参赛，只看球队是否在前两届冠军链候选池里。口径 B 是更严格的“前两届都参赛”排除规则：若一支队参赛履历完整，但没有任何冠亚军路径接触，历史上没有下一届夺冠。</li>
+<li><strong>纯 CCS 是宽口径候选池结论。</strong> 在全历史淘汰路径样本里，纯 CCS 覆盖 16/19 个可判定冠军；同规模随机候选池期望命中 6.2 个冠军，达到该结果的概率是 0.0004%。</li>
+<li><strong>前两届参赛口径是更锋利的排除结论。</strong> 1938-2022 年间，177 个球队-届次满足“前两届都参赛”；其中 112 个有冠军/亚军路径接触，65 个没有。后者成为下一届冠军的次数是 0。</li>
 <li><strong>这会重新解释所谓历史漏点。</strong> 1978 阿根廷和 1998 法国不是反例，因为它们前两届没有都正常参加决赛圈。1982 意大利也不是反例，因为它前两届都参赛，且 1978 年第二阶段小组输给了当届亚军荷兰。</li>
 <li><strong>随机基准本质就是概率乘法，而且这是正确的第一道检验。</strong> 如果每届随机排除与 clean non-contact 池同样数量的球队，期望会误排 2.6 个冠军；精确算出来，随机排除却 0 次排到冠军的概率是 5.9%。</li>
 <li><strong>Monte Carlo simulation 只是复核，不是黑箱。</strong> 20 万次随机重抽得到 5.9%，与精确概率接近。报告用精确值作 headline，把 simulation 作为可复现 sanity check。</li>
@@ -58,13 +65,26 @@
 </section>
 
 <div class="kpis">
-<div class="kpi"><div class="value">0/65</div><div class="label">干净非接触池冠军数</div></div>
+<div class="kpi"><div class="value">16/19</div><div class="label">纯 CCS 全历史冠军覆盖</div></div>
+<div class="kpi"><div class="value">0.0004%</div><div class="label">同规模随机达到纯 CCS</div></div>
+<div class="kpi"><div class="value">0/65</div><div class="label">严格无接触池冠军数</div></div>
 <div class="kpi"><div class="value">112/65</div><div class="label">前两届参赛样本：路径接触 vs 无接触</div></div>
-<div class="kpi"><div class="value">15/15</div><div class="label">前两届都参赛冠军具备路径接触</div></div>
-<div class="kpi"><div class="value">5.9%</div><div class="label">同规模随机排除也 0 误伤冠军</div></div>
 </div>
 
-<h2>1. 历史规则：干净非接触池没有出过冠军</h2>
+<h2>1. 两个口径，两种用法</h2>
+<div class="lens-grid">
+<div class="lens"><div class="tag">口径 A · 纯 CCS</div><div class="metric">16/19 个冠军</div><p>不要求球队前两届都参赛。只问下一届冠军是否出现在前两届任一冠军链候选池里，用来构建宽口径候选池。</p></div>
+<div class="lens"><div class="tag">口径 B · 前两届都参赛</div><div class="metric">0/65 个冠军</div><p>只看前两届都参赛的球队。如果它仍然没有冠亚军路径接触，就进入严格排除池；历史冠军数为零。</p></div>
+</div>
+<p><strong>两者回答的问题不一样。</strong> 纯 CCS 适合做“候选池”；前两届参赛规则适合做“排除/降权”。这样既不因为门槛过严丢掉法国 1998 这类无前史样本，也能保留最锋利的排除结论。</p>
+
+<h2>2. 口径 A：不考虑前两届都参赛的纯 CCS</h2>
+<p><strong>纯 CCS 先回答宽口径问题。</strong> 不管一支队前两届是否都参加，只要它出现在前两届任一冠军链候选池里，就算 CCS 候选。在全历史淘汰路径样本中，这个口径覆盖 16/19 个可判定冠军。</p>
+<div class="figure"><img src="assets/02a_pure_ccs_random_benchmark_zh.png" alt="Pure CCS random benchmark"><div class="caption">纯 CCS 与每届同规模随机候选池对比；图中同时给出精确概率和 Monte Carlo 复核。</div></div>
+<p><strong>现代标准赛制样本也支持这个方向。</strong> 1986-2022 年，纯 CCS 覆盖全部冠军口径 9/10 (90.0%)；如果剔除 1998 法国这个无前史例外，则为 9/9 (100.0%)。</p>
+<div class="figure"><img src="assets/01_modern_funnel_zh.png" alt="CCS modern stage funnel"><div class="caption">现代时代定义为 1986-2022。全部冠军口径为 9/10；剔除 1998 法国这一前两届无世界杯决赛圈前史样本后为 9/9。</div></div>
+
+<h2>3. 口径 B：前两届都参赛的严格排除规则</h2>
 <p><strong>这条规则刻意很窄。</strong> 只有当一支球队前两届都参加了世界杯决赛圈，并且这两届所有淘汰赛/争冠阶段经历中，既没有自己夺冠，也没有输给当届冠军或亚军，才进入排除池。1974、1978、1982 的第二阶段小组被视为争冠阶段，因为这些年份不是现代 16 强淘汰赛结构。</p>
 <p><strong>“前两届都参赛”这个门槛确实苛刻，所以要在同一个门槛内对比。</strong> 1938-2022 的目标样本共有 460 个球队-届次；其中只有 177 个满足“前两届都参赛”。在这 177 个里面，112 个有过冠军/亚军路径接触，65 个没有。</p>
 <p><strong>65 个不是 65 支唯一球队，而是 65 个球队-届次。</strong> 它是严格参赛门槛之后的“干净无接触”一侧，对照组是同样满足前两届参赛条件、但已经有冠亚军路径接触的 112 个球队-届次。更细地拆，严格意义上“前两届输给当届冠军/亚军”的是 99 个；“前两届自己当过冠军”的是 31 个；两者重叠 18 个，所以合并后是 112 个。</p>
@@ -112,19 +132,16 @@
   </tbody>
 </table>
 
-<h2>2. 现代标准赛制样本：赛事越深入，CCS 越集中</h2>
-<p><strong>核心回测形态是单调上升。</strong> CCS 球队约占全部参赛队三成，但从 16 强、8 强、4 强、决赛到冠军，其占比逐层上升。这意味着 CCS 更像“冠军过滤器”，而不是普通的淘汰赛晋级预测器。</p>
-<div class="figure"><img src="assets/01_modern_funnel_zh.png" alt="CCS modern stage funnel"><div class="caption">现代时代定义为 1986-2022。全部冠军口径为 9/10；剔除 1998 法国这一前两届无世界杯决赛圈前史样本后为 9/9。</div></div>
-
-<h2>3. 方法与 simulation：先精确基准，再 simulation 复核</h2>
-<p><strong>精确基准很简单。</strong> 每一届随机排除与规则排除池同样数量的球队。冠军不被随机排除的概率，就是 1 减去该届排除池占比。把各届“冠军没被排除”的概率相乘，就得到随机同规模排除却一次都没误排冠军的精确概率。</p>
-<p><strong>Monte Carlo simulation 只是复核这个乘法。</strong> 脚本另外做 20 万次同规模随机重抽；模拟得到 0 次误排冠军的概率为 5.9%，精确概率为 5.9%。</p>
+<h2>4. 两套 simulation：宽口径命中与严格口径排除</h2>
+<p><strong>两套基准的思想一致：每届保留同样规模，然后随机化标签。</strong> 对纯 CCS 来说，检验的是“同规模随机候选池能否命中至少同样多冠军”；对严格口径来说，检验的是“同规模随机排除池能否一次都不排掉冠军”。</p>
+<p><strong>纯 CCS 随机基准是命中率检验。</strong> 全历史淘汰路径样本中，同规模随机候选池期望命中 6.2 个冠军；达到 16/19 的精确概率是 0.0004%，Monte Carlo 概率是 <0.0005%。</p>
+<p><strong>严格排除随机基准是误伤检验。</strong> 脚本做 20 万次同规模随机重抽；模拟得到 0 次误排冠军的概率为 5.9%，精确概率为 5.9%。</p>
 <div class="figure"><img src="assets/02_random_benchmark_zh.png" alt="Random benchmark chart"><div class="caption">规则排除 65 个球队-届次，且 0 次排到冠军。同规模随机排除的期望误排冠军数为 2.6。</div></div>
 <p><strong>更强的控制，是检验 CCS 是否只是“强队标签”。</strong> 这个 simulation 明确限制在 1998-2022，因为这一段有一致的赛前 FIFA 排名语境，也更适合人工定义“现代冠军叙事队”。我们保留 CCS 在“传统冠军叙事队”和普通队中的数量，再在两个组内随机置换 CCS 标签。剔除法国 1998 这个明确无前史例外后，CCS 实际命中 6/6 个可判定冠军；强队标签置换的期望为 4.0/6，达到 6/6 的概率为 8.2%。</p>
 <div class="figure"><img src="assets/05_contender_permutation_zh.png" alt="Strong-team permutation simulation"><div class="caption">这不是世界排名 simulation。它控制的是“CCS 本来就会和传统强队重叠”这件事，再检验具体的冠军链标签是否还有额外信息。</div></div>
 <div class="callout warn"><strong>解释边界：</strong> 这些 simulation 支持 CCS 是一个可信的筛选启发式，但尚不能证明它优于 Elo、赔率或多变量模型。下一步应检验相对于强基准的增量价值。</div>
 
-<h2>4. 赛前使用体验：哪些强队/豪门应被 CCS 降权</h2>
+<h2>5. 赛前使用体验：哪些强队/豪门应被 CCS 降权</h2>
 <p><strong>这是最容易让读者理解的方法使用场景。</strong> 开赛前，一支球队可以排名很高、历史声望很强、舆论很热，但仍然缺少最近两届的冠军链连接。主图从“FIFA Top 20 且非 CCS”的审计池里人工策展，重点保留今天读者也会自然认为与冠军叙事相关的强队：阿根廷、德国、英格兰、西班牙、葡萄牙、荷兰、比利时、哥伦比亚、克罗地亚、乌拉圭。</p>
 <div class="figure"><img src="assets/03_favorite_traps_zh.png" alt="Recognizable non-CCS title contenders"><div class="caption">样本来自开赛前 FIFA Top 20 且非 CCS 的入围队；主图展示人工策展的强队/豪门清单。完整机械 Top 20 审计表保留在 data/derived/favorite_traps.csv；策展清单保留在 data/derived/favorite_trap_powerhouses.csv。</div></div>
 <table class="dataframe data-table">
@@ -319,7 +336,7 @@
 </table>
 <p><strong>这个信号有用，但不是绝对排除。</strong> 非 CCS 强队可以走很远：2002 德国、2010 荷兰、2014 阿根廷都进入决赛。更准确的结论是：现代样本里，最终冠军几乎总来自 CCS 一侧。</p>
 
-<h2>5. 2026 应用：区分排名强与冠军链强</h2>
+<h2>6. 2026 应用：区分排名强与冠军链强</h2>
 <p><strong>2026 是实时应用场景，不是回测结果。</strong> 本报告将排名快照冻结在 FIFA 2026 年 6 月 11 日官方排名，并使用 FIFA 2026 赛季接口中的入围队名单。最直接的赛前结论是：西班牙、葡萄牙、巴西、德国、哥伦比亚，都是排名强、声望强，但开赛前非 CCS 的豪强。</p>
 <table class="dataframe data-table">
   <thead>
@@ -490,7 +507,7 @@
   </tbody>
 </table>
 
-<h2>6. 为什么会这样：强队重要，但路径也重要</h2>
+<h2>7. 为什么会这样：强队重要，但路径也重要</h2>
 <p><strong>首先要承认，CCS 确实部分捕捉了强队效应。</strong> 冠军、亚军，以及被冠亚军淘汰的球队，本来就往往是强队。因此 CCS 与 FIFA 排名、赔率、历史声望存在天然重叠。</p>
 <p><strong>但 CCS 并不等同于“经常入围”或“排名很高”。</strong> 它要求球队在最近两届与冠军路径发生过具体关系：自己夺冠，或被最终冠亚军淘汰。一个队可以排名高、经常参赛、甚至进过 8 强，但如果没有触碰冠军路径，仍然可能是非 CCS。</p>
 <p><strong>更合理的机制解释是“锦标赛周期验证”。</strong> 最近两届与冠军链发生联系，意味着球队已经在世界杯淘汰赛强度下被冠军级对手验证过。这不是因果证明，而是一个紧凑的历史状态变量；它对冠军列尤其有解释力。</p>
