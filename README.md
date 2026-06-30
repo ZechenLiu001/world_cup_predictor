@@ -47,7 +47,7 @@ Selected CSVs in `output/tables/` are meant to be read directly:
 - `path_exclusion_summary.csv` - strict prior-two-participation exclusion test.
 - `historical_random_benchmark.csv` - same-size random benchmark for pure CCS.
 - `path_exclusion_random_benchmark.csv` - same-size random benchmark for strict exclusion.
-- `strength_inertia_summary.csv` - previous top-four/top-eight/top-16 baselines.
+- `strength_inertia_summary.csv` - previous, prior-two-union, and two-straight top-four/top-eight/top-16 baselines.
 - `model_incremental_summary.csv` - FIFA, Elo, blended model, and CCS same-size comparison.
 - `model_topk_curve_summary.csv` - Top-K recall comparison.
 - `ccs_rank_compression_summary.csv` - CCS plus FIFA rank-gate compression test.

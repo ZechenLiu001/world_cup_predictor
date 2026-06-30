@@ -2,18 +2,27 @@ scope,scope_label_en,scope_label_zh,signal,label_en,label_zh,champion_hits,champ
 historical_1938_2022,Full evaluable history,全历史可判定样本,previous_top16,Previous R16/knockout phase,上届16强/淘汰阶段,17,19,0.8947368421052632,173,0.09826589595375723,9.105263157894736,7.379166666666666,4.570026135652997e-06
 historical_1938_2022,Full evaluable history,全历史可判定样本,previous_top4,Previous top four,上届四强,7,19,0.3684210526315789,61,0.11475409836065574,3.210526315789474,2.8041666666666667,0.014088114239044323
 historical_1938_2022,Full evaluable history,全历史可判定样本,previous_top8,Previous top eight,上届八强/争冠阶段,12,19,0.631578947368421,118,0.1016949152542373,6.2105263157894735,5.327083333333333,0.0012327744686246496
+historical_1938_2022,Full evaluable history,全历史可判定样本,prior_two_top16_union,Either prior World Cup R16/knockout phase,前两届任一16强/淘汰阶段,18,19,0.9473684210526315,226,0.07964601769911504,11.894736842105264,9.55625,3.118639586656511e-05
+historical_1938_2022,Full evaluable history,全历史可判定样本,prior_two_top4_union,Either prior World Cup top four,前两届任一四强,12,19,0.631578947368421,98,0.12244897959183673,5.157894736842105,4.397916666666666,0.00018915538224087715
+historical_1938_2022,Full evaluable history,全历史可判定样本,prior_two_top8_union,Either prior World Cup top eight,前两届任一八强/争冠阶段,18,19,0.9473684210526315,166,0.10843373493975904,8.736842105263158,7.410416666666666,3.604515912261413e-07
 historical_1938_2022,Full evaluable history,全历史可判定样本,two_straight_top16,Two straight R16/knockout phases,连续两届16强/淘汰阶段,12,19,0.631578947368421,94,0.1276595744680851,4.947368421052632,3.9270833333333335,3.8725156008459494e-05
 historical_1938_2022,Full evaluable history,全历史可判定样本,two_straight_top4,Two straight top fours,连续两届四强,4,19,0.21052631578947367,18,0.2222222222222222,0.9473684210526315,0.8333333333333334,0.007601551428160831
 historical_1938_2022,Full evaluable history,全历史可判定样本,two_straight_top8,Two straight top eights,连续两届八强/争冠阶段,7,19,0.3684210526315789,55,0.12727272727272726,2.8947368421052633,2.4895833333333335,0.0066662076577692474
 modern_1986_2022,Modern standard-format era,现代标准赛制样本,previous_top16,Previous R16/knockout phase,上届16强/淘汰阶段,9,10,0.9,117,0.07692307692307693,11.7,3.9791666666666665,0.0015419228646780738
 modern_1986_2022,Modern standard-format era,现代标准赛制样本,previous_top4,Previous top four,上届四强,3,10,0.3,34,0.08823529411764706,3.4,1.1666666666666667,0.10119640200476474
 modern_1986_2022,Modern standard-format era,现代标准赛制样本,previous_top8,Previous top eight,上届八强/争冠阶段,5,10,0.5,69,0.07246376811594203,6.9,2.3854166666666665,0.062263816199447326
+modern_1986_2022,Modern standard-format era,现代标准赛制样本,prior_two_top16_union,Either prior World Cup R16/knockout phase,前两届任一16强/淘汰阶段,9,10,0.9,154,0.05844155844155844,15.4,5.177083333333333,0.013778419860399379
+modern_1986_2022,Modern standard-format era,现代标准赛制样本,prior_two_top4_union,Either prior World Cup top four,前两届任一四强,5,10,0.5,57,0.08771929824561403,5.7,1.9270833333333333,0.02767401548205978
+modern_1986_2022,Modern standard-format era,现代标准赛制样本,prior_two_top8_union,Either prior World Cup top eight,前两届任一八强/争冠阶段,9,10,0.9,100,0.09,10.0,3.4270833333333335,0.0004197099781322322
 modern_1986_2022,Modern standard-format era,现代标准赛制样本,two_straight_top16,Two straight R16/knockout phases,连续两届16强/淘汰阶段,8,10,0.8,66,0.12121212121212122,6.6,2.2604166666666665,0.00017231865786015987
 modern_1986_2022,Modern standard-format era,现代标准赛制样本,two_straight_top4,Two straight top fours,连续两届四强,3,10,0.3,10,0.3,1.0,0.35416666666666663,0.0040706034590214215
 modern_1986_2022,Modern standard-format era,现代标准赛制样本,two_straight_top8,Two straight top eights,连续两届八强/争冠阶段,4,10,0.4,32,0.125,3.2,1.1354166666666667,0.01762596736039591
 modern_1998_2022,1998-onward modern audit,1998 以后现代审计样本,previous_top16,Previous R16/knockout phase,上届16强/淘汰阶段,6,7,0.8571428571428571,86,0.06976744186046512,12.285714285714286,2.6875,0.014771479764021933
 modern_1998_2022,1998-onward modern audit,1998 以后现代审计样本,previous_top4,Previous top four,上届四强,2,7,0.2857142857142857,24,0.08333333333333333,3.4285714285714284,0.75,0.16748550906777382
 modern_1998_2022,1998-onward modern audit,1998 以后现代审计样本,previous_top8,Previous top eight,上届八强/争冠阶段,3,7,0.42857142857142855,47,0.06382978723404255,6.714285714285714,1.46875,0.16520209808368236
+modern_1998_2022,1998-onward modern audit,1998 以后现代审计样本,prior_two_top16_union,Either prior World Cup R16/knockout phase,前两届任一16强/淘汰阶段,6,7,0.8571428571428571,119,0.05042016806722689,17.0,3.71875,0.08499934896826744
+modern_1998_2022,1998-onward modern audit,1998 以后现代审计样本,prior_two_top4_union,Either prior World Cup top four,前两届任一四强,3,7,0.42857142857142855,43,0.06976744186046512,6.142857142857143,1.34375,0.13376030884683132
+modern_1998_2022,1998-onward modern audit,1998 以后现代审计样本,prior_two_top8_union,Either prior World Cup top eight,前两届任一八强/争冠阶段,6,7,0.8571428571428571,71,0.08450704225352113,10.142857142857142,2.21875,0.005095138913020492
 modern_1998_2022,1998-onward modern audit,1998 以后现代审计样本,two_straight_top16,Two straight R16/knockout phases,连续两届16强/淘汰阶段,5,7,0.7142857142857143,47,0.10638297872340426,6.714285714285714,1.46875,0.0055526252835989
 modern_1998_2022,1998-onward modern audit,1998 以后现代审计样本,two_straight_top4,Two straight top fours,连续两届四强,2,7,0.2857142857142857,6,0.3333333333333333,0.8571428571428571,0.1875,0.01346993912011385
 modern_1998_2022,1998-onward modern audit,1998 以后现代审计样本,two_straight_top8,Two straight top eights,连续两届八强/争冠阶段,2,7,0.2857142857142857,19,0.10526315789473684,2.7142857142857144,0.59375,0.11321602179668844
