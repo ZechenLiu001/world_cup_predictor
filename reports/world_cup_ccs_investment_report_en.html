@@ -32,10 +32,11 @@
     .caption { color:var(--muted); font-size:12px; margin-top:7px; }
     .callout { border-left: 4px solid var(--blue); background:#f4f8ff; padding:14px 16px; margin:18px 0; }
     .warn { border-left-color: var(--red); background:#fff6f2; }
-    .data-table { width:100%; border-collapse: collapse; margin: 16px 0 24px; font-size:13px; }
+    .data-table { width:100%; border-collapse: collapse; margin: 16px 0 24px; font-size:13px; break-inside: avoid; page-break-inside: avoid; }
     .data-table th { background:#15233a; color:#fff; text-align:left; padding:9px; }
     .data-table td { border-bottom:1px solid var(--line); padding:8px 9px; vertical-align:top; }
     .data-table tr:nth-child(even) td { background:#fafbfe; }
+    .data-table tr { break-inside: avoid; page-break-inside: avoid; }
     .footer { color:var(--muted); font-size:12px; margin-top:40px; border-top:1px solid var(--line); padding-top:16px; }
     @media print { .page { padding: 24px 34px; } .figure img { break-inside: avoid; } h2 { break-after: avoid; } }
     @page { size: A4; margin: 14mm 12mm; }
@@ -52,11 +53,13 @@
 <ul>
 <li><strong>The report now carries two explicit lenses.</strong> Lens A is pure CCS: no prior-participation filter, just whether a team is in the prior two champion-chain pools. Lens B adds the stricter question: among teams that played both prior World Cups, did any clean non-contact team ever win next?</li>
 <li><strong>Pure CCS is the broad candidate-pool claim.</strong> Across the full knockout-path history, pure CCS covers 16/19 evaluable champions; a same-size random candidate pool would expect 6.2 hits and reach that result with probability 0.0004%.</li>
+<li><strong>The pool is not trivially huge.</strong> Pure CCS averages 7.5 candidates per historical tournament, covering 32.8% of all teams and 45.7% of knockout/championship-phase teams by simple yearly average.</li>
 <li><strong>The prior-two-participation lens is the sharper exclusion claim.</strong> From 1938 to 2022, 177 team-tournaments played both prior World Cups; 112 had champion/runner-up path contact, while 65 had none. That clean non-contact bucket produced 0 next champions.</li>
 <li><strong>This reframes the historical “misses.”</strong> Argentina 1978 and France 1998 are not counterexamples because they did not play both prior World Cups. Italy 1982 is not a counterexample because it played both, and in 1978 it lost to runner-up Netherlands in the second group stage.</li>
 <li><strong>The random benchmark is just probability multiplication, and that is the right first test.</strong> If each year randomly excluded the same number of teams as the clean non-contact bucket, the expected number of excluded champions is 2.6; the exact probability of excluding zero champions is 5.9%.</li>
 <li><strong>The Monte Carlo simulation is a sanity check, not a black box.</strong> A 200,000-run random redraw gives 5.9%, close to the exact probability. The report uses the exact value as the headline and keeps simulation as a reproducibility check.</li>
 <li><strong>The most useful reader experience is the pre-tournament downgrade list.</strong> From 1998 onward, a long list of recognizable contenders were highly ranked but non-CCS at kickoff. Many still advanced, including finalists, but none won in the modern sample.</li>
+<li><strong>The report now controls for simple strength inertia.</strong> Previous top-eight status covers 12/19 historical champions, while two straight top-eight finishes cover only 7/19. Pure CCS covers 16/19 on the same historical denominator.</li>
 <li><strong>The mechanism is partly strength, but more specific than strength.</strong> The rule asks a narrower question than ranking: did this team recently prove it could survive, win, or be eliminated by finalist-level opposition in the World Cup cycle?</li>
 </ul>
 </section>
@@ -75,13 +78,19 @@
 </div>
 <p><strong>These lenses answer different questions.</strong> Pure CCS is better for building a candidate pool. The prior-two-participation rule is better for explaining why certain apparently strong teams should be downgraded before kickoff.</p>
 
-<h2>2. Lens A: pure CCS, without the prior-participation filter</h2>
+<h2>2. Scope and pool size: CCS is not a majority-of-field shortcut</h2>
+<p><strong>The historical scope is 19 evaluable target tournaments from 1938 to 2022.</strong> The lookback window uses the two most recent World Cups with a knockout or championship-phase path; 1950 is excluded as a source tournament because it had no knockout path, while 1974, 1978, and 1982 treat the second group stage as a championship phase.</p>
+<p><strong>The pure CCS pool is large enough to be useful, but not so large that the result is automatic.</strong> Across the historical sample, pure CCS averages 7.5 candidates per tournament. It covers 32.8% of all participants by simple yearly average (31.8% weighted by team-tournaments).</p>
+<p><strong>Within the business end of the tournament, CCS still does not cover everyone.</strong> It covers 45.7% of knockout/championship-phase teams by simple yearly average (43.6% weighted). In the modern 1986-2022 sample, CCS covers 29.8% of all teams, 41.2% of round-of-16 teams, and 52.5% of quarter-finalists.</p>
+<div class="callout"><strong>Why this matters for the top-four/top-eight controls:</strong> previous top-eight candidates average 6.2 qualified teams per tournament, two-straight top-eight candidates average 2.9, and pure CCS averages 7.5. The comparison is therefore about signal quality, not a rule that simply includes almost every plausible contender.</div>
+
+<h2>3. Lens A: pure CCS, without the prior-participation filter</h2>
 <p><strong>Pure CCS asks the broad question first.</strong> Ignore whether the team played both previous World Cups. If it is in the champion-chain set from either of the prior two knockout-path tournaments, it is a CCS candidate. On the full historical knockout-path sample, this covers 16/19 evaluable champions.</p>
 <div class="figure"><img src="assets/02a_pure_ccs_random_benchmark_en.png" alt="Pure CCS random benchmark"><div class="caption">Pure CCS is compared against a same-size random candidate pool for each tournament. Exact probability and Monte Carlo simulation are both reported.</div></div>
 <p><strong>Modern standard-format evidence points in the same direction.</strong> From 1986 to 2022, CCS covers 9/10 (90.0%) champions overall, or 9/9 (100.0%) after treating France 1998 as a no-prior-history exception.</p>
 <div class="figure"><img src="assets/01_modern_funnel_en.png" alt="CCS modern stage funnel"><div class="caption">Modern era is 1986-2022. Champion coverage is 9/10 on the all-champion denominator and 9/9 after removing France 1998, which had no prior-two-World-Cup finals history.</div></div>
 
-<h2>3. Lens B: the strict exclusion rule has produced zero champions</h2>
+<h2>4. Lens B: the strict exclusion rule has produced zero champions</h2>
 <p><strong>The rule is intentionally narrow.</strong> A team is put in the exclusion bucket only when it played both prior World Cups and, across all knockout or championship-phase appearances in those two tournaments, it neither won the tournament nor lost to that tournament's champion or runner-up. In 1974, 1978, and 1982, the second group stage is treated as a championship phase because those formats did not use a modern round-of-16 bracket.</p>
 <p><strong>The prior-two-participation gate is deliberately strict, so the right comparison is inside that same gate.</strong> Across the 1938-2022 target sample, there are 460 team-tournaments. Only 177 played both prior World Cups; among those, 112 had champion/runner-up path contact and 65 did not.</p>
 <p><strong>The 65 count is team-tournaments, not unique teams.</strong> It is the clean side of a 112 vs 65 split among teams that passed the strict prior-participation gate, not a hand-picked list of isolated cases. If counted more literally, 99 of the 177 lost to a champion or runner-up in the prior two tournaments; 31 had their own prior title; 18 had both, so the union is 112.</p>
@@ -129,7 +138,7 @@
   </tbody>
 </table>
 
-<h2>4. Two simulations: pure candidate-pool hit and strict exclusion miss</h2>
+<h2>5. Two simulations: pure candidate-pool hit and strict exclusion miss</h2>
 <p><strong>Both benchmarks use the same philosophy: preserve each year's pool size, randomize the labels, then compare the observed result.</strong> For pure CCS, the event is “random candidate pool hits at least as many champions as CCS.” For the strict lens, the event is “random exclusion pool avoids every champion.”</p>
 <p><strong>The pure CCS random benchmark is a hit-rate test.</strong> Same-size random pools would expect 6.2 champion hits across the full historical knockout-path sample; reaching 16/19 has exact probability 0.0004% and Monte Carlo probability <0.0005%.</p>
 <p><strong>The strict exclusion benchmark is an exclusion test.</strong> The script redraws same-size random exclusion pools 200,000 times. The simulated probability of excluding zero champions is 5.9%, while the exact probability is 5.9%.</p>
@@ -138,7 +147,7 @@
 <div class="figure"><img src="assets/05_contender_permutation_en.png" alt="Strong-team permutation simulation"><div class="caption">This is deliberately not a FIFA-ranking simulation. It controls for the broader fact that CCS often overlaps with obvious football powers, then asks whether the specific champion-chain label still carries information.</div></div>
 <div class="callout warn"><strong>Interpretation discipline:</strong> these simulations support CCS as a credible screening heuristic. They do not prove it beats Elo, betting odds, or a full multivariate model. The next bar is incremental value versus those stronger baselines.</div>
 
-<h2>5. The pre-tournament experience: recognizable favorites CCS would downgrade</h2>
+<h2>6. The pre-tournament experience: recognizable favorites CCS would downgrade</h2>
 <p><strong>This is the most intuitive way to use the method.</strong> Before kickoff, a team can be highly ranked, historically recognizable, and still lack a recent champion-chain connection. The main exhibit is curated from a Top-20 non-CCS audit pool to show the teams a modern audience would naturally treat as title-relevant: Argentina, Germany, England, Spain, Portugal, Netherlands, Belgium, Colombia, Croatia, and Uruguay.</p>
 <div class="figure"><img src="assets/03_favorite_traps_en.png" alt="Recognizable non-CCS title contenders"><div class="caption">Curated from qualified teams that were FIFA Top 20 and non-CCS at kickoff. The full mechanical Top-20 audit table is retained in data/derived/favorite_traps.csv; the curated list is retained in data/derived/favorite_trap_powerhouses.csv.</div></div>
 <table class="dataframe data-table">
@@ -333,7 +342,7 @@
 </table>
 <p><strong>The pattern is useful but not absolute.</strong> Non-CCS strong teams can go deep: 2002 Germany, 2010 Netherlands, and 2014 Argentina reached finals. The historical point is narrower and stronger: in the modern sample, the champion almost always came from the CCS side of the field.</p>
 
-<h2>6. 2026 application: separate rank strength from champion-chain strength</h2>
+<h2>7. 2026 application: separate rank strength from champion-chain strength</h2>
 <p><strong>The 2026 view is a live-use case, not a backtest result.</strong> The ranking snapshot is frozen at FIFA's June 11, 2026 official ranking and the qualified-team list is from FIFA's 2026 season endpoint. The headline application is clear: Spain, Portugal, Brazil, Germany, and Colombia are rank-strong, reputation-strong, but non-CCS before kickoff.</p>
 <table class="dataframe data-table">
   <thead>
@@ -504,7 +513,60 @@
   </tbody>
 </table>
 
-<h2>7. Why this happens: strength matters, but path matters too</h2>
+<h2>8. Strength-inertia baselines: top-four and top-eight history is not enough</h2>
+<p><strong>This is the cleanest answer to the “is CCS just picking historically strong teams?” objection.</strong> Simple prior-performance rules do contain information: previous top-eight teams are better than random. But they do not cover champions nearly as well as CCS, and the stricter consecutive-top-eight rule becomes too narrow.</p>
+<div class="figure"><img src="assets/06_strength_inertia_en.png" alt="Strength inertia benchmark"><div class="caption">Coverage is measured on the same 1938-2022 evaluable historical denominator. The top-eight definition includes second group stage for the 1974/1978/1982 hybrid formats.</div></div>
+<table class="dataframe data-table">
+  <thead>
+    <tr style="text-align: right;">
+      <th>Signal</th>
+      <th>Champion coverage</th>
+      <th>Avg candidate pool</th>
+      <th>Candidate-slot precision</th>
+      <th>Same-size random tail</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Previous top four</td>
+      <td>7/19 (36.8%)</td>
+      <td>3.2</td>
+      <td>11.5%</td>
+      <td>1.41%</td>
+    </tr>
+    <tr>
+      <td>Previous top eight</td>
+      <td>12/19 (63.2%)</td>
+      <td>6.2</td>
+      <td>10.2%</td>
+      <td>0.12%</td>
+    </tr>
+    <tr>
+      <td>Two straight top fours</td>
+      <td>4/19 (21.1%)</td>
+      <td>0.9</td>
+      <td>22.2%</td>
+      <td>0.76%</td>
+    </tr>
+    <tr>
+      <td>Two straight top eights</td>
+      <td>7/19 (36.8%)</td>
+      <td>2.9</td>
+      <td>12.7%</td>
+      <td>0.67%</td>
+    </tr>
+    <tr>
+      <td>Pure CCS</td>
+      <td>16/19 (84.2%)</td>
+      <td>7.5</td>
+      <td>11.3%</td>
+      <td>0.0004%</td>
+    </tr>
+  </tbody>
+</table>
+<p><strong>The miss list is the point.</strong> Previous top-eight history misses France 1998, Italy 2006, Spain 2010, and Argentina 2022; two straight top-eight history also misses France 2018. CCS is not merely copying the previous bracket. It captures a wider champion-chain relationship.</p>
+
+<h2>9. Why this happens: strength matters, but path matters too</h2>
 <p><strong>CCS partly captures strength, and that should be acknowledged.</strong> Champions, finalists, and teams beaten by finalists are usually strong teams. A signal built from those events will naturally overlap with FIFA ranking, odds, and historical reputation.</p>
 <p><strong>But CCS is not simply 'teams that often qualify' or 'teams that are highly ranked.'</strong> It requires a specific recent relationship to the champion path: either winning the World Cup or being knocked out by a finalist. A team can be ranked highly, qualify regularly, or have reached a quarter-final and still be non-CCS if it did not touch that path.</p>
 <p><strong>The proposed mechanism is tournament-cycle validation.</strong> Recent champion-chain contact is a proxy for having already met World Cup knockout intensity against finalist-level opposition. It is not causal proof; it is a compact historical state variable that seems especially relevant for champions rather than finalists.</p>
@@ -516,13 +578,6 @@
 <li><strong>Track 2026 without moving the goalposts.</strong> Freeze the pre-tournament CCS/ranking table and evaluate it only after the tournament is complete.</li>
 </ol>
 
-<h2>Further Questions</h2>
-<ul>
-<li>Does CCS add predictive lift after controlling for Elo or betting odds?</li>
-<li>Is a one-, two-, or three-tournament lookback optimal once tested out of sample?</li>
-<li>Should hosts, major squad-cycle upgrades, and no-prior-history teams receive a separate override flag rather than being treated as ordinary non-CCS teams?</li>
-</ul>
-
 <h2>Caveats And Assumptions</h2>
 <ul>
 <li>The headline exclusion test uses team-tournaments, not unique national teams. A country can appear multiple times if it satisfies the rule in multiple World Cup cycles.</li>
@@ -530,7 +585,9 @@
 <li>For 1974, 1978, and 1982, second group stage matches are treated as championship-phase matches because those tournaments used hybrid formats rather than a modern bracket.</li>
 <li>The random benchmark is an exact same-size random exclusion calculation. The Monte Carlo simulation is only a reproducibility check of that arithmetic.</li>
 <li>The strong-team permutation simulation remains a modern 1998-2022 control, not a full-history simulation, because it depends on consistent modern ranking context and curated title-contender labels.</li>
+<li>Strength-inertia baselines are now included for previous top four, previous top eight, two straight top fours, and two straight top eights. They are useful controls but not replacements for CCS.</li>
 <li>FIFA ranking is used lightly as a public audit proxy; odds and Elo would be better next-step baselines.</li>
+<li>Elo and betting-odds controls require external historical datasets that are not part of this reproducible repo snapshot; they are kept as next-version model benchmarks rather than open items inside this report.</li>
 <li>2026 outcomes are not used in the 2026 watchlist. The ranking date is frozen at June 11, 2026.</li>
 </ul>
 

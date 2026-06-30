@@ -1,0 +1,16 @@
+scope,scope_label_en,scope_label_zh,signal,label_en,label_zh,champion_hits,champions_considered,coverage,candidate_slots,candidate_precision,avg_candidate_pool,expected_random_hits,prob_random_ge_actual
+historical_1938_2022,Full evaluable history,全历史可判定样本,previous_top4,Previous top four,上届四强,7,19,0.3684210526315789,61,0.11475409836065574,3.210526315789474,2.8041666666666667,0.014088114239044323
+historical_1938_2022,Full evaluable history,全历史可判定样本,previous_top8,Previous top eight,上届八强/争冠阶段,12,19,0.631578947368421,118,0.1016949152542373,6.2105263157894735,5.327083333333333,0.0012327744686246496
+historical_1938_2022,Full evaluable history,全历史可判定样本,two_straight_top4,Two straight top fours,连续两届四强,4,19,0.21052631578947367,18,0.2222222222222222,0.9473684210526315,0.8333333333333334,0.007601551428160831
+historical_1938_2022,Full evaluable history,全历史可判定样本,two_straight_top8,Two straight top eights,连续两届八强/争冠阶段,7,19,0.3684210526315789,55,0.12727272727272726,2.8947368421052633,2.4895833333333335,0.0066662076577692474
+modern_1986_2022,Modern standard-format era,现代标准赛制样本,previous_top4,Previous top four,上届四强,3,10,0.3,34,0.08823529411764706,3.4,1.1666666666666667,0.10119640200476474
+modern_1986_2022,Modern standard-format era,现代标准赛制样本,previous_top8,Previous top eight,上届八强/争冠阶段,5,10,0.5,69,0.07246376811594203,6.9,2.3854166666666665,0.062263816199447326
+modern_1986_2022,Modern standard-format era,现代标准赛制样本,two_straight_top4,Two straight top fours,连续两届四强,3,10,0.3,10,0.3,1.0,0.35416666666666663,0.0040706034590214215
+modern_1986_2022,Modern standard-format era,现代标准赛制样本,two_straight_top8,Two straight top eights,连续两届八强/争冠阶段,4,10,0.4,32,0.125,3.2,1.1354166666666667,0.01762596736039591
+modern_1998_2022,1998-onward modern audit,1998 以后现代审计样本,previous_top4,Previous top four,上届四强,2,7,0.2857142857142857,24,0.08333333333333333,3.4285714285714284,0.75,0.16748550906777382
+modern_1998_2022,1998-onward modern audit,1998 以后现代审计样本,previous_top8,Previous top eight,上届八强/争冠阶段,3,7,0.42857142857142855,47,0.06382978723404255,6.714285714285714,1.46875,0.16520209808368236
+modern_1998_2022,1998-onward modern audit,1998 以后现代审计样本,two_straight_top4,Two straight top fours,连续两届四强,2,7,0.2857142857142857,6,0.3333333333333333,0.8571428571428571,0.1875,0.01346993912011385
+modern_1998_2022,1998-onward modern audit,1998 以后现代审计样本,two_straight_top8,Two straight top eights,连续两届八强/争冠阶段,2,7,0.2857142857142857,19,0.10526315789473684,2.7142857142857144,0.59375,0.11321602179668844
+historical_1938_2022,Full evaluable history,全历史可判定样本,pure_ccs,Pure CCS,纯 CCS,16,19,0.8421052631578947,142,0.11267605633802817,7.473684210526316,6.239583333333333,3.567350310891299e-06
+modern_1986_2022,Modern standard-format era,现代标准赛制样本,pure_ccs,Pure CCS,纯 CCS,9,10,0.9,90,0.1,9.0,3.0104166666666665,0.00013639455573866144
+modern_1998_2022,1998-onward modern audit,1998 以后现代审计样本,pure_ccs,Pure CCS,纯 CCS,6,7,0.8571428571428571,71,0.08450704225352113,10.142857142857142,2.21875,0.005095138913020492

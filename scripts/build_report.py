@@ -650,6 +650,142 @@ def contender_permutation_benchmark(joined: pd.DataFrame, modern_summary: pd.Dat
     return detail, summary
 
 
+TOP4_PERFORMANCES = {"final", "third-place match", "semi-finals"}
+TOP8_CHAMPIONSHIP_PHASE = TOP4_PERFORMANCES | {"quarter-finals", "second group stage"}
+
+
+def strength_inertia_benchmark(
+    historical_team_year: pd.DataFrame, historical_summary: pd.DataFrame
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Compare CCS with simpler previous-performance baselines.
+
+    The top-eight baseline includes the second group stage for 1974, 1978, and
+    1982 because those tournaments used a championship-phase group instead of a
+    modern quarter-final bracket.
+    """
+
+    years = sorted(int(year) for year in historical_team_year["year"].unique())
+    teams_by_year = {
+        year: set(historical_team_year.loc[historical_team_year["year"].eq(year), "team_name"])
+        for year in years
+    }
+    champion_by_year = historical_summary.set_index("year")["champion"].to_dict()
+    signals = [
+        ("previous_top4", "Previous top four", "上届四强", TOP4_PERFORMANCES, 1),
+        ("previous_top8", "Previous top eight", "上届八强/争冠阶段", TOP8_CHAMPIONSHIP_PHASE, 1),
+        ("two_straight_top4", "Two straight top fours", "连续两届四强", TOP4_PERFORMANCES, 2),
+        ("two_straight_top8", "Two straight top eights", "连续两届八强/争冠阶段", TOP8_CHAMPIONSHIP_PHASE, 2),
+    ]
+
+    detail_rows = []
+    for idx, year in enumerate(years):
+        if year not in champion_by_year or idx < 2:
+            continue
+        champion = champion_by_year[year]
+        target_teams = teams_by_year[year]
+        for signal, label_en, label_zh, performances, lookback in signals:
+            prior_years = years[idx - lookback : idx]
+            if len(prior_years) != lookback:
+                continue
+            pools = []
+            for prior in prior_years:
+                pools.append(
+                    set(
+                        historical_team_year.loc[
+                            historical_team_year["year"].eq(prior)
+                            & historical_team_year["performance"].isin(performances),
+                            "team_name",
+                        ]
+                    )
+                )
+            raw_pool = set.intersection(*pools) if pools else set()
+            qualified_pool = raw_pool & target_teams
+            detail_rows.append(
+                {
+                    "year": year,
+                    "champion": champion,
+                    "signal": signal,
+                    "label_en": label_en,
+                    "label_zh": label_zh,
+                    "lookback_years": ";".join(map(str, prior_years)),
+                    "candidate_pool": ";".join(sorted(raw_pool)),
+                    "qualified_candidate_pool": ";".join(sorted(qualified_pool)),
+                    "qualified_pool_size": len(qualified_pool),
+                    "participants": len(target_teams),
+                    "champion_hit": int(champion in qualified_pool),
+                    "random_hit_probability": len(qualified_pool) / len(target_teams) if target_teams else np.nan,
+                }
+            )
+
+    detail = pd.DataFrame(detail_rows)
+    summary_rows = []
+    scope_defs = [
+        ("historical_1938_2022", 1938, "Full evaluable history", "全历史可判定样本"),
+        ("modern_1986_2022", 1986, "Modern standard-format era", "现代标准赛制样本"),
+        ("modern_1998_2022", 1998, "1998-onward modern audit", "1998 以后现代审计样本"),
+    ]
+    for scope, min_year, scope_label_en, scope_label_zh in scope_defs:
+        for signal, rows in detail[detail["year"].ge(min_year)].groupby("signal"):
+            rows = rows.sort_values("year")
+            hits = int(rows["champion_hit"].sum())
+            total = int(len(rows))
+            pool_total = int(rows["qualified_pool_size"].sum())
+            probs = rows["random_hit_probability"].tolist()
+            dist = poisson_binomial_distribution(probs)
+            signal_label_en = rows["label_en"].iloc[0]
+            signal_label_zh = rows["label_zh"].iloc[0]
+            summary_rows.append(
+                {
+                    "scope": scope,
+                    "scope_label_en": scope_label_en,
+                    "scope_label_zh": scope_label_zh,
+                    "signal": signal,
+                    "label_en": signal_label_en,
+                    "label_zh": signal_label_zh,
+                    "champion_hits": hits,
+                    "champions_considered": total,
+                    "coverage": hits / total if total else np.nan,
+                    "candidate_slots": pool_total,
+                    "candidate_precision": hits / pool_total if pool_total else np.nan,
+                    "avg_candidate_pool": pool_total / total if total else np.nan,
+                    "expected_random_hits": float(sum(probs)),
+                    "prob_random_ge_actual": float(dist[hits:].sum()),
+                }
+            )
+
+    ccs_rows = historical_summary[historical_summary["evaluable"].eq(1)].copy()
+    for scope, min_year, scope_label_en, scope_label_zh in scope_defs:
+        rows = ccs_rows[ccs_rows["year"].ge(min_year)].sort_values("year")
+        hits = int(rows["champ_ccs"].sum())
+        total = int(len(rows))
+        pool_total = int(rows["ccs_candidates"].sum())
+        probs = (rows["ccs_candidates"] / rows["participants"]).tolist()
+        dist = poisson_binomial_distribution(probs)
+        summary_rows.append(
+            {
+                "scope": scope,
+                "scope_label_en": scope_label_en,
+                "scope_label_zh": scope_label_zh,
+                "signal": "pure_ccs",
+                "label_en": "Pure CCS",
+                "label_zh": "纯 CCS",
+                "champion_hits": hits,
+                "champions_considered": total,
+                "coverage": hits / total if total else np.nan,
+                "candidate_slots": pool_total,
+                "candidate_precision": hits / pool_total if pool_total else np.nan,
+                "avg_candidate_pool": pool_total / total if total else np.nan,
+                "expected_random_hits": float(sum(probs)),
+                "prob_random_ge_actual": float(dist[hits:].sum()),
+            }
+        )
+
+    summary = pd.DataFrame(summary_rows)
+    detail.to_csv(DATA_DERIVED / "strength_inertia_detail.csv", index=False)
+    summary.to_csv(DATA_DERIVED / "strength_inertia_summary.csv", index=False)
+    return detail, summary
+
+
 def build_favorite_traps(team_year: pd.DataFrame, rankings: pd.DataFrame) -> pd.DataFrame:
     joined = team_year.merge(
         rankings[["year", "team_name", "team_code", "fifa_rank", "fifa_points", "ranking_official_date"]],
@@ -1113,6 +1249,50 @@ def chart_rank_bucket(joined: pd.DataFrame, lang: str = "en") -> str:
     return savefig(f"05_rank_bucket_control_{lang}.png")
 
 
+def chart_strength_inertia(summary: pd.DataFrame, lang: str = "en") -> str:
+    order = ["previous_top4", "previous_top8", "two_straight_top4", "two_straight_top8", "pure_ccs"]
+    sample = summary[summary["scope"].eq("historical_1938_2022")].set_index("signal").loc[order].reset_index()
+    labels = sample["label_en"].tolist()
+    if lang == "zh":
+        labels = sample["label_zh"].tolist()
+    coverage = sample["coverage"].to_numpy()
+    colors = ["#9aa6b2", "#7f8b9b", "#c4ccd6", "#aeb8c5", "#0b5cad"]
+
+    fig, ax = plt.subplots(figsize=(11.4, 5.6))
+    bars = ax.bar(np.arange(len(sample)), coverage, color=colors, width=0.62)
+    ax.set_ylim(0, 1.0)
+    ax.set_yticks(np.linspace(0, 1, 6))
+    ax.set_yticklabels([f"{v:.0%}" for v in np.linspace(0, 1, 6)])
+    ax.set_xticks(np.arange(len(sample)))
+    ax.set_xticklabels(labels, rotation=0)
+    ax.set_ylabel("Champion coverage" if lang == "en" else "冠军覆盖率")
+    ax.set_title(
+        "Simple strength-inertia rules miss many champions"
+        if lang == "en"
+        else "朴素强队惯性规则会漏掉大量冠军"
+    )
+    ax.grid(axis="y", color="#e8ebf1")
+    ax.spines[["top", "right"]].set_visible(False)
+    for bar, row in zip(bars, sample.itertuples()):
+        label = f"{int(row.champion_hits)}/{int(row.champions_considered)}\n{row.coverage:.1%}"
+        ax.annotate(
+            label,
+            (bar.get_x() + bar.get_width() / 2, bar.get_height()),
+            xytext=(0, 8),
+            textcoords="offset points",
+            ha="center",
+            fontsize=10.5,
+            fontweight="bold",
+        )
+    note = (
+        "Top-eight includes the 1974/1978/1982 second group stage as a championship phase."
+        if lang == "en"
+        else "八强口径把 1974/1978/1982 第二阶段小组视为争冠阶段。"
+    )
+    ax.text(0.5, 0.05, note, ha="center", transform=ax.transAxes, fontsize=10, color="#5b6575")
+    return savefig(f"06_strength_inertia_{lang}.png")
+
+
 def pct(x: float) -> str:
     return f"{x:.1%}"
 
@@ -1159,10 +1339,11 @@ def report_css() -> str:
     .caption { color:var(--muted); font-size:12px; margin-top:7px; }
     .callout { border-left: 4px solid var(--blue); background:#f4f8ff; padding:14px 16px; margin:18px 0; }
     .warn { border-left-color: var(--red); background:#fff6f2; }
-    .data-table { width:100%; border-collapse: collapse; margin: 16px 0 24px; font-size:13px; }
+    .data-table { width:100%; border-collapse: collapse; margin: 16px 0 24px; font-size:13px; break-inside: avoid; page-break-inside: avoid; }
     .data-table th { background:#15233a; color:#fff; text-align:left; padding:9px; }
     .data-table td { border-bottom:1px solid var(--line); padding:8px 9px; vertical-align:top; }
     .data-table tr:nth-child(even) td { background:#fafbfe; }
+    .data-table tr { break-inside: avoid; page-break-inside: avoid; }
     .footer { color:var(--muted); font-size:12px; margin-top:40px; border-top:1px solid var(--line); padding-top:16px; }
     @media print { .page { padding: 24px 34px; } .figure img { break-inside: avoid; } h2 { break-after: avoid; } }
     @page { size: A4; margin: 14mm 12mm; }
@@ -1307,10 +1488,71 @@ def path_exclusion_examples_html(summary: pd.DataFrame, lang: str) -> str:
     )
 
 
+def strength_inertia_table_html(summary: pd.DataFrame, lang: str) -> str:
+    order = ["previous_top4", "previous_top8", "two_straight_top4", "two_straight_top8", "pure_ccs"]
+    view = summary[summary["scope"].eq("historical_1938_2022")].set_index("signal").loc[order].reset_index()
+    view["coverage_display"] = view.apply(
+        lambda row: f"{int(row['champion_hits'])}/{int(row['champions_considered'])} ({row['coverage']:.1%})",
+        axis=1,
+    )
+    view["avg_candidate_pool"] = view["avg_candidate_pool"].map(lambda x: f"{x:.1f}")
+    view["candidate_precision"] = view["candidate_precision"].map(lambda x: f"{x:.1%}")
+    view["prob_random_ge_actual"] = view["prob_random_ge_actual"].map(lambda x: f"{x:.2%}" if x >= 0.001 else f"{x:.4%}")
+    if lang == "zh":
+        view["label"] = view["label_zh"]
+        return table_html(
+            view,
+            ["label", "coverage_display", "avg_candidate_pool", "candidate_precision", "prob_random_ge_actual"],
+            {
+                "label": "信号",
+                "coverage_display": "冠军覆盖",
+                "avg_candidate_pool": "平均候选池",
+                "candidate_precision": "候选槽位命中密度",
+                "prob_random_ge_actual": "同规模随机达到该命中",
+            },
+        )
+    view["label"] = view["label_en"]
+    return table_html(
+        view,
+        ["label", "coverage_display", "avg_candidate_pool", "candidate_precision", "prob_random_ge_actual"],
+        {
+            "label": "Signal",
+            "coverage_display": "Champion coverage",
+            "avg_candidate_pool": "Avg candidate pool",
+            "candidate_precision": "Candidate-slot precision",
+            "prob_random_ge_actual": "Same-size random tail",
+        },
+    )
+
+
+def ccs_scope_metrics(historical_team_year: pd.DataFrame, historical_summary: pd.DataFrame, modern: pd.DataFrame) -> dict:
+    sample_years = historical_summary.loc[historical_summary["evaluable"].eq(1), "year"]
+    sample = historical_team_year[historical_team_year["year"].isin(sample_years)].copy()
+    knockout = sample[sample["performance"].isin(TOP8_CHAMPIONSHIP_PHASE | {"round of 16"})].copy()
+    championship_phase = sample[sample["performance"].isin(TOP8_CHAMPIONSHIP_PHASE)].copy()
+    by_year = sample.groupby("year")
+    knockout_by_year = knockout.groupby("year")
+    championship_by_year = championship_phase.groupby("year")
+    return {
+        "historical_all_simple": pct(by_year["ccs"].mean().mean()),
+        "historical_all_weighted": pct(sample["ccs"].mean()),
+        "historical_knockout_simple": pct(knockout_by_year["ccs"].mean().mean()),
+        "historical_knockout_weighted": pct(knockout["ccs"].mean()),
+        "historical_championship_simple": pct(championship_by_year["ccs"].mean().mean()),
+        "historical_championship_weighted": pct(championship_phase["ccs"].mean()),
+        "historical_avg_pool": f"{historical_summary.loc[historical_summary['evaluable'].eq(1), 'ccs_candidates'].mean():.1f}",
+        "modern_all_simple": pct((modern["ccs"] / modern["participants"]).mean()),
+        "modern_all_weighted": pct(modern["ccs"].sum() / modern["participants"].sum()),
+        "modern_r16_simple": pct((modern["r16_ccs"] / modern["r16_total"]).mean()),
+        "modern_qf_simple": pct((modern["qf_ccs"] / modern["qf_total"]).mean()),
+    }
+
+
 def render_report_en(context: dict) -> str:
     css = report_css()
     traps_html, watch_html, downgrade_2026_html = prepare_tables(context, "en")
     examples_html = path_exclusion_examples_html(context["path_summary"], "en")
+    inertia_html = strength_inertia_table_html(context["strength_inertia_summary"], "en")
     return f"""<!doctype html>
 <html lang="en">
 <head>
@@ -1329,11 +1571,13 @@ def render_report_en(context: dict) -> str:
 <ul>
 <li><strong>The report now carries two explicit lenses.</strong> Lens A is pure CCS: no prior-participation filter, just whether a team is in the prior two champion-chain pools. Lens B adds the stricter question: among teams that played both prior World Cups, did any clean non-contact team ever win next?</li>
 <li><strong>Pure CCS is the broad candidate-pool claim.</strong> Across the full knockout-path history, pure CCS covers {context['historical_champions_short']} evaluable champions; a same-size random candidate pool would expect {context['historical_random_expected']} hits and reach that result with probability {context['historical_random_prob']}.</li>
+<li><strong>The pool is not trivially huge.</strong> Pure CCS averages {context['historical_avg_pool']} candidates per historical tournament, covering {context['historical_all_simple']} of all teams and {context['historical_knockout_simple']} of knockout/championship-phase teams by simple yearly average.</li>
 <li><strong>The prior-two-participation lens is the sharper exclusion claim.</strong> From 1938 to 2022, {context['path_prior_both_total']} team-tournaments played both prior World Cups; {context['path_contact_total']} had champion/runner-up path contact, while {context['clean_non_contact_teams']} had none. That clean non-contact bucket produced {context['clean_non_contact_champions']} next champions.</li>
 <li><strong>This reframes the historical “misses.”</strong> Argentina 1978 and France 1998 are not counterexamples because they did not play both prior World Cups. Italy 1982 is not a counterexample because it played both, and in 1978 it lost to runner-up Netherlands in the second group stage.</li>
 <li><strong>The random benchmark is just probability multiplication, and that is the right first test.</strong> If each year randomly excluded the same number of teams as the clean non-contact bucket, the expected number of excluded champions is {context['path_random_expected']}; the exact probability of excluding zero champions is {context['path_random_zero_prob']}.</li>
 <li><strong>The Monte Carlo simulation is a sanity check, not a black box.</strong> A 200,000-run random redraw gives {context['path_random_zero_sim_prob']}, close to the exact probability. The report uses the exact value as the headline and keeps simulation as a reproducibility check.</li>
 <li><strong>The most useful reader experience is the pre-tournament downgrade list.</strong> From 1998 onward, a long list of recognizable contenders were highly ranked but non-CCS at kickoff. Many still advanced, including finalists, but none won in the modern sample.</li>
+<li><strong>The report now controls for simple strength inertia.</strong> Previous top-eight status covers {context['prev_top8_hist']} historical champions, while two straight top-eight finishes cover only {context['two_top8_hist']}. Pure CCS covers {context['historical_champions_short']} on the same historical denominator.</li>
 <li><strong>The mechanism is partly strength, but more specific than strength.</strong> The rule asks a narrower question than ranking: did this team recently prove it could survive, win, or be eliminated by finalist-level opposition in the World Cup cycle?</li>
 </ul>
 </section>
@@ -1352,13 +1596,19 @@ def render_report_en(context: dict) -> str:
 </div>
 <p><strong>These lenses answer different questions.</strong> Pure CCS is better for building a candidate pool. The prior-two-participation rule is better for explaining why certain apparently strong teams should be downgraded before kickoff.</p>
 
-<h2>2. Lens A: pure CCS, without the prior-participation filter</h2>
+<h2>2. Scope and pool size: CCS is not a majority-of-field shortcut</h2>
+<p><strong>The historical scope is 19 evaluable target tournaments from 1938 to 2022.</strong> The lookback window uses the two most recent World Cups with a knockout or championship-phase path; 1950 is excluded as a source tournament because it had no knockout path, while 1974, 1978, and 1982 treat the second group stage as a championship phase.</p>
+<p><strong>The pure CCS pool is large enough to be useful, but not so large that the result is automatic.</strong> Across the historical sample, pure CCS averages {context['historical_avg_pool']} candidates per tournament. It covers {context['historical_all_simple']} of all participants by simple yearly average ({context['historical_all_weighted']} weighted by team-tournaments).</p>
+<p><strong>Within the business end of the tournament, CCS still does not cover everyone.</strong> It covers {context['historical_knockout_simple']} of knockout/championship-phase teams by simple yearly average ({context['historical_knockout_weighted']} weighted). In the modern 1986-2022 sample, CCS covers {context['modern_all_simple']} of all teams, {context['modern_r16_simple']} of round-of-16 teams, and {context['modern_qf_simple']} of quarter-finalists.</p>
+<div class="callout"><strong>Why this matters for the top-four/top-eight controls:</strong> previous top-eight candidates average 6.2 qualified teams per tournament, two-straight top-eight candidates average 2.9, and pure CCS averages 7.5. The comparison is therefore about signal quality, not a rule that simply includes almost every plausible contender.</div>
+
+<h2>3. Lens A: pure CCS, without the prior-participation filter</h2>
 <p><strong>Pure CCS asks the broad question first.</strong> Ignore whether the team played both previous World Cups. If it is in the champion-chain set from either of the prior two knockout-path tournaments, it is a CCS candidate. On the full historical knockout-path sample, this covers {context['historical_champions_short']} evaluable champions.</p>
 <div class="figure"><img src="{context['fig_pure_random_en']}" alt="Pure CCS random benchmark"><div class="caption">Pure CCS is compared against a same-size random candidate pool for each tournament. Exact probability and Monte Carlo simulation are both reported.</div></div>
 <p><strong>Modern standard-format evidence points in the same direction.</strong> From 1986 to 2022, CCS covers {context['champ_all']} champions overall, or {context['champ_evaluable']} after treating France 1998 as a no-prior-history exception.</p>
 <div class="figure"><img src="{context['fig_funnel_en']}" alt="CCS modern stage funnel"><div class="caption">Modern era is 1986-2022. Champion coverage is 9/10 on the all-champion denominator and 9/9 after removing France 1998, which had no prior-two-World-Cup finals history.</div></div>
 
-<h2>3. Lens B: the strict exclusion rule has produced zero champions</h2>
+<h2>4. Lens B: the strict exclusion rule has produced zero champions</h2>
 <p><strong>The rule is intentionally narrow.</strong> A team is put in the exclusion bucket only when it played both prior World Cups and, across all knockout or championship-phase appearances in those two tournaments, it neither won the tournament nor lost to that tournament's champion or runner-up. In 1974, 1978, and 1982, the second group stage is treated as a championship phase because those formats did not use a modern round-of-16 bracket.</p>
 <p><strong>The prior-two-participation gate is deliberately strict, so the right comparison is inside that same gate.</strong> Across the 1938-2022 target sample, there are {context['path_team_tournaments_total']} team-tournaments. Only {context['path_prior_both_total']} played both prior World Cups; among those, {context['path_contact_total']} had champion/runner-up path contact and {context['clean_non_contact_teams']} did not.</p>
 <p><strong>The 65 count is team-tournaments, not unique teams.</strong> It is the clean side of a {context['path_contact_total']} vs {context['clean_non_contact_teams']} split among teams that passed the strict prior-participation gate, not a hand-picked list of isolated cases. If counted more literally, {context['path_lost_to_finalist_total']} of the 177 lost to a champion or runner-up in the prior two tournaments; {context['path_own_champion_total']} had their own prior title; {context['path_contact_overlap_total']} had both, so the union is {context['path_contact_total']}.</p>
@@ -1366,7 +1616,7 @@ def render_report_en(context: dict) -> str:
 <p><strong>The apparent exceptions disappear under this stricter definition.</strong> Argentina 1978 did not play the 1970 finals. France 1998 did not play either 1990 or 1994. Italy 1982 did play both prior tournaments, but in 1978 it lost to the eventual runner-up, the Netherlands, during the second group stage.</p>
 {examples_html}
 
-<h2>4. Two simulations: pure candidate-pool hit and strict exclusion miss</h2>
+<h2>5. Two simulations: pure candidate-pool hit and strict exclusion miss</h2>
 <p><strong>Both benchmarks use the same philosophy: preserve each year's pool size, randomize the labels, then compare the observed result.</strong> For pure CCS, the event is “random candidate pool hits at least as many champions as CCS.” For the strict lens, the event is “random exclusion pool avoids every champion.”</p>
 <p><strong>The pure CCS random benchmark is a hit-rate test.</strong> Same-size random pools would expect {context['historical_random_expected']} champion hits across the full historical knockout-path sample; reaching {context['historical_champions_short']} has exact probability {context['historical_random_prob']} and Monte Carlo probability {context['historical_random_sim_prob']}.</p>
 <p><strong>The strict exclusion benchmark is an exclusion test.</strong> The script redraws same-size random exclusion pools 200,000 times. The simulated probability of excluding zero champions is {context['path_random_zero_sim_prob']}, while the exact probability is {context['path_random_zero_prob']}.</p>
@@ -1375,20 +1625,26 @@ def render_report_en(context: dict) -> str:
 <div class="figure"><img src="{context['fig_sim_en']}" alt="Strong-team permutation simulation"><div class="caption">This is deliberately not a FIFA-ranking simulation. It controls for the broader fact that CCS often overlaps with obvious football powers, then asks whether the specific champion-chain label still carries information.</div></div>
 <div class="callout warn"><strong>Interpretation discipline:</strong> these simulations support CCS as a credible screening heuristic. They do not prove it beats Elo, betting odds, or a full multivariate model. The next bar is incremental value versus those stronger baselines.</div>
 
-<h2>5. The pre-tournament experience: recognizable favorites CCS would downgrade</h2>
+<h2>6. The pre-tournament experience: recognizable favorites CCS would downgrade</h2>
 <p><strong>This is the most intuitive way to use the method.</strong> Before kickoff, a team can be highly ranked, historically recognizable, and still lack a recent champion-chain connection. The main exhibit is curated from a Top-20 non-CCS audit pool to show the teams a modern audience would naturally treat as title-relevant: Argentina, Germany, England, Spain, Portugal, Netherlands, Belgium, Colombia, Croatia, and Uruguay.</p>
 <div class="figure"><img src="{context['fig_traps_en']}" alt="Recognizable non-CCS title contenders"><div class="caption">Curated from qualified teams that were FIFA Top 20 and non-CCS at kickoff. The full mechanical Top-20 audit table is retained in data/derived/favorite_traps.csv; the curated list is retained in data/derived/favorite_trap_powerhouses.csv.</div></div>
 {traps_html}
 <p><strong>The pattern is useful but not absolute.</strong> Non-CCS strong teams can go deep: 2002 Germany, 2010 Netherlands, and 2014 Argentina reached finals. The historical point is narrower and stronger: in the modern sample, the champion almost always came from the CCS side of the field.</p>
 
-<h2>6. 2026 application: separate rank strength from champion-chain strength</h2>
+<h2>7. 2026 application: separate rank strength from champion-chain strength</h2>
 <p><strong>The 2026 view is a live-use case, not a backtest result.</strong> The ranking snapshot is frozen at FIFA's June 11, 2026 official ranking and the qualified-team list is from FIFA's 2026 season endpoint. The headline application is clear: Spain, Portugal, Brazil, Germany, and Colombia are rank-strong, reputation-strong, but non-CCS before kickoff.</p>
 {downgrade_2026_html}
 <p>The broader watchlist below keeps the full top-ranked context visible, so the downgrade call is not hidden inside a hand-picked list.</p>
 <div class="figure"><img src="{context['fig_2026_en']}" alt="2026 ranked non-CCS contenders"><div class="caption">Five high-reputation 2026 qualifiers that are outside the CCS pool before kickoff. The table below keeps the broader top-ranked context.</div></div>
 {watch_html}
 
-<h2>7. Why this happens: strength matters, but path matters too</h2>
+<h2>8. Strength-inertia baselines: top-four and top-eight history is not enough</h2>
+<p><strong>This is the cleanest answer to the “is CCS just picking historically strong teams?” objection.</strong> Simple prior-performance rules do contain information: previous top-eight teams are better than random. But they do not cover champions nearly as well as CCS, and the stricter consecutive-top-eight rule becomes too narrow.</p>
+<div class="figure"><img src="{context['fig_inertia_en']}" alt="Strength inertia benchmark"><div class="caption">Coverage is measured on the same 1938-2022 evaluable historical denominator. The top-eight definition includes second group stage for the 1974/1978/1982 hybrid formats.</div></div>
+{inertia_html}
+<p><strong>The miss list is the point.</strong> Previous top-eight history misses France 1998, Italy 2006, Spain 2010, and Argentina 2022; two straight top-eight history also misses France 2018. CCS is not merely copying the previous bracket. It captures a wider champion-chain relationship.</p>
+
+<h2>9. Why this happens: strength matters, but path matters too</h2>
 <p><strong>CCS partly captures strength, and that should be acknowledged.</strong> Champions, finalists, and teams beaten by finalists are usually strong teams. A signal built from those events will naturally overlap with FIFA ranking, odds, and historical reputation.</p>
 <p><strong>But CCS is not simply 'teams that often qualify' or 'teams that are highly ranked.'</strong> It requires a specific recent relationship to the champion path: either winning the World Cup or being knocked out by a finalist. A team can be ranked highly, qualify regularly, or have reached a quarter-final and still be non-CCS if it did not touch that path.</p>
 <p><strong>The proposed mechanism is tournament-cycle validation.</strong> Recent champion-chain contact is a proxy for having already met World Cup knockout intensity against finalist-level opposition. It is not causal proof; it is a compact historical state variable that seems especially relevant for champions rather than finalists.</p>
@@ -1400,13 +1656,6 @@ def render_report_en(context: dict) -> str:
 <li><strong>Track 2026 without moving the goalposts.</strong> Freeze the pre-tournament CCS/ranking table and evaluate it only after the tournament is complete.</li>
 </ol>
 
-<h2>Further Questions</h2>
-<ul>
-<li>Does CCS add predictive lift after controlling for Elo or betting odds?</li>
-<li>Is a one-, two-, or three-tournament lookback optimal once tested out of sample?</li>
-<li>Should hosts, major squad-cycle upgrades, and no-prior-history teams receive a separate override flag rather than being treated as ordinary non-CCS teams?</li>
-</ul>
-
 <h2>Caveats And Assumptions</h2>
 <ul>
 <li>The headline exclusion test uses team-tournaments, not unique national teams. A country can appear multiple times if it satisfies the rule in multiple World Cup cycles.</li>
@@ -1414,7 +1663,9 @@ def render_report_en(context: dict) -> str:
 <li>For 1974, 1978, and 1982, second group stage matches are treated as championship-phase matches because those tournaments used hybrid formats rather than a modern bracket.</li>
 <li>The random benchmark is an exact same-size random exclusion calculation. The Monte Carlo simulation is only a reproducibility check of that arithmetic.</li>
 <li>The strong-team permutation simulation remains a modern 1998-2022 control, not a full-history simulation, because it depends on consistent modern ranking context and curated title-contender labels.</li>
+<li>Strength-inertia baselines are now included for previous top four, previous top eight, two straight top fours, and two straight top eights. They are useful controls but not replacements for CCS.</li>
 <li>FIFA ranking is used lightly as a public audit proxy; odds and Elo would be better next-step baselines.</li>
+<li>Elo and betting-odds controls require external historical datasets that are not part of this reproducible repo snapshot; they are kept as next-version model benchmarks rather than open items inside this report.</li>
 <li>2026 outcomes are not used in the 2026 watchlist. The ranking date is frozen at June 11, 2026.</li>
 </ul>
 
@@ -1433,6 +1684,7 @@ def render_report_zh(context: dict) -> str:
     """
     traps_html, watch_html, downgrade_2026_html = prepare_tables(context, "zh")
     examples_html = path_exclusion_examples_html(context["path_summary"], "zh")
+    inertia_html = strength_inertia_table_html(context["strength_inertia_summary"], "zh")
     return f"""<!doctype html>
 <html lang="zh-CN">
 <head>
@@ -1443,7 +1695,7 @@ def render_report_zh(context: dict) -> str:
 <body>
 <main class="page">
 <div class="eyebrow">世界杯预测研究备忘录</div>
-<h1>冠军链信号：一个赛前冠军候选过滤器</h1>
+<h1>冠军链信号：赛前冠军候选过滤器</h1>
 <p class="subhead">本报告同时保留两个口径：纯 CCS 作为宽口径冠军候选池；“前两届都参赛”作为更严格的赛前排除规则。</p>
 
 <section class="summary">
@@ -1451,11 +1703,13 @@ def render_report_zh(context: dict) -> str:
 <ul>
 <li><strong>报告现在明确分成两个口径。</strong> 口径 A 是纯 CCS：不要求前两届都参赛，只看球队是否在前两届冠军链候选池里。口径 B 是更严格的“前两届都参赛”排除规则：若一支队参赛履历完整，但没有任何冠亚军路径接触，历史上没有下一届夺冠。</li>
 <li><strong>纯 CCS 是宽口径候选池结论。</strong> 在全历史淘汰路径样本里，纯 CCS 覆盖 {context['historical_champions_short']} 个可判定冠军；同规模随机候选池期望命中 {context['historical_random_expected']} 个冠军，达到该结果的概率是 {context['historical_random_prob']}。</li>
+<li><strong>这个池子并不是大到没意义。</strong> 纯 CCS 全历史每届平均 {context['historical_avg_pool']} 个候选队；按届简单平均，覆盖全部参赛队的 {context['historical_all_simple']}，覆盖淘汰赛/争冠阶段球队的 {context['historical_knockout_simple']}。</li>
 <li><strong>前两届参赛口径是更锋利的排除结论。</strong> 1938-2022 年间，{context['path_prior_both_total']} 个球队-届次满足“前两届都参赛”；其中 {context['path_contact_total']} 个有冠军/亚军路径接触，{context['clean_non_contact_teams']} 个没有。后者成为下一届冠军的次数是 {context['clean_non_contact_champions']}。</li>
 <li><strong>这会重新解释所谓历史漏点。</strong> 1978 阿根廷和 1998 法国不是反例，因为它们前两届没有都正常参加决赛圈。1982 意大利也不是反例，因为它前两届都参赛，且 1978 年第二阶段小组输给了当届亚军荷兰。</li>
 <li><strong>随机基准本质就是概率乘法，而且这是正确的第一道检验。</strong> 如果每届随机排除与 clean non-contact 池同样数量的球队，期望会误排 {context['path_random_expected']} 个冠军；精确算出来，随机排除却 0 次排到冠军的概率是 {context['path_random_zero_prob']}。</li>
 <li><strong>Monte Carlo simulation 只是复核，不是黑箱。</strong> 20 万次随机重抽得到 {context['path_random_zero_sim_prob']}，与精确概率接近。报告用精确值作 headline，把 simulation 作为可复现 sanity check。</li>
 <li><strong>最有体感的用法，是赛前热门队降权清单。</strong> 1998 年以来，一众排名高、名气大、今天读者也会认为有冠军叙事的强队，在开赛前并非 CCS。它们并不一定弱，甚至可能进决赛，但现代样本里没有最终夺冠。</li>
+<li><strong>现在也补上了朴素强队惯性对照。</strong> 上届八强覆盖 {context['prev_top8_hist']} 个历史冠军；连续两届八强只覆盖 {context['two_top8_hist']}。同一历史分母下，纯 CCS 覆盖 {context['historical_champions_short']}。</li>
 <li><strong>机制上，它有强队效应，但比“强队”更窄。</strong> 它问的不是球队是否有名、排名是否高，而是它最近两届是否已经在世界杯周期里被冠军级或亚军级对手验证过。</li>
 </ul>
 </section>
@@ -1474,13 +1728,19 @@ def render_report_zh(context: dict) -> str:
 </div>
 <p><strong>两者回答的问题不一样。</strong> 纯 CCS 适合做“候选池”；前两届参赛规则适合做“排除/降权”。这样既不因为门槛过严丢掉法国 1998 这类无前史样本，也能保留最锋利的排除结论。</p>
 
-<h2>2. 口径 A：不考虑前两届都参赛的纯 CCS</h2>
+<h2>2. 范围与池子大小：CCS 不是把强队全圈进来</h2>
+<p><strong>全历史主样本是 1938-2022 的 19 届可判定目标赛事。</strong> 回看窗口使用此前最近两届有淘汰赛/争冠路径的世界杯；1950 年不能作为来源赛事，因为没有淘汰赛路径；1974、1978、1982 的第二阶段小组被视为争冠阶段。</p>
+<p><strong>纯 CCS 候选池不小，但也远不是“把大多数球队都圈进去”。</strong> 在全历史样本中，纯 CCS 每届平均 {context['historical_avg_pool']} 个候选队；按届简单平均覆盖全部参赛队的 {context['historical_all_simple']}，按球队-届次加权是 {context['historical_all_weighted']}。</p>
+<p><strong>即便只看淘汰赛/争冠阶段，CCS 也没有覆盖所有强队。</strong> 它按届平均覆盖淘汰赛/争冠阶段球队的 {context['historical_knockout_simple']}，加权口径是 {context['historical_knockout_weighted']}。在 1986-2022 现代样本中，CCS 覆盖全部参赛队的 {context['modern_all_simple']}、16 强球队的 {context['modern_r16_simple']}、8 强球队的 {context['modern_qf_simple']}。</p>
+<div class="callout"><strong>为什么这让四强/八强对照更合理：</strong> 上届八强候选池每届平均 6.2 支已入围球队，连续两届八强平均 2.9 支，纯 CCS 平均 7.5 支。对比的重点不是谁圈得更大，而是谁在相近量级候选池里更能覆盖冠军。</div>
+
+<h2>3. 口径 A：不考虑前两届都参赛的纯 CCS</h2>
 <p><strong>纯 CCS 先回答宽口径问题。</strong> 不管一支队前两届是否都参加，只要它出现在前两届任一冠军链候选池里，就算 CCS 候选。在全历史淘汰路径样本中，这个口径覆盖 {context['historical_champions_short']} 个可判定冠军。</p>
 <div class="figure"><img src="{context['fig_pure_random_zh']}" alt="Pure CCS random benchmark"><div class="caption">纯 CCS 与每届同规模随机候选池对比；图中同时给出精确概率和 Monte Carlo 复核。</div></div>
 <p><strong>现代标准赛制样本也支持这个方向。</strong> 1986-2022 年，纯 CCS 覆盖全部冠军口径 {context['champ_all']}；如果剔除 1998 法国这个无前史例外，则为 {context['champ_evaluable']}。</p>
 <div class="figure"><img src="{context['fig_funnel_zh']}" alt="CCS modern stage funnel"><div class="caption">现代时代定义为 1986-2022。全部冠军口径为 9/10；剔除 1998 法国这一前两届无世界杯决赛圈前史样本后为 9/9。</div></div>
 
-<h2>3. 口径 B：前两届都参赛的严格排除规则</h2>
+<h2>4. 口径 B：前两届都参赛的严格排除规则</h2>
 <p><strong>这条规则刻意很窄。</strong> 只有当一支球队前两届都参加了世界杯决赛圈，并且这两届所有淘汰赛/争冠阶段经历中，既没有自己夺冠，也没有输给当届冠军或亚军，才进入排除池。1974、1978、1982 的第二阶段小组被视为争冠阶段，因为这些年份不是现代 16 强淘汰赛结构。</p>
 <p><strong>“前两届都参赛”这个门槛确实苛刻，所以要在同一个门槛内对比。</strong> 1938-2022 的目标样本共有 {context['path_team_tournaments_total']} 个球队-届次；其中只有 {context['path_prior_both_total']} 个满足“前两届都参赛”。在这 {context['path_prior_both_total']} 个里面，{context['path_contact_total']} 个有过冠军/亚军路径接触，{context['clean_non_contact_teams']} 个没有。</p>
 <p><strong>65 个不是 65 支唯一球队，而是 65 个球队-届次。</strong> 它是严格参赛门槛之后的“干净无接触”一侧，对照组是同样满足前两届参赛条件、但已经有冠亚军路径接触的 {context['path_contact_total']} 个球队-届次。更细地拆，严格意义上“前两届输给当届冠军/亚军”的是 {context['path_lost_to_finalist_total']} 个；“前两届自己当过冠军”的是 {context['path_own_champion_total']} 个；两者重叠 {context['path_contact_overlap_total']} 个，所以合并后是 {context['path_contact_total']} 个。</p>
@@ -1488,7 +1748,7 @@ def render_report_zh(context: dict) -> str:
 <p><strong>看似的例外，在这个定义下会消失。</strong> 1978 阿根廷没有参加 1970 决赛圈；1998 法国没有参加 1990 和 1994 决赛圈；1982 意大利虽然前两届都参赛，但 1978 年第二阶段小组输给了最终亚军荷兰。</p>
 {examples_html}
 
-<h2>4. 两套 simulation：宽口径命中与严格口径排除</h2>
+<h2>5. 两套 simulation：宽口径命中与严格口径排除</h2>
 <p><strong>两套基准的思想一致：每届保留同样规模，然后随机化标签。</strong> 对纯 CCS 来说，检验的是“同规模随机候选池能否命中至少同样多冠军”；对严格口径来说，检验的是“同规模随机排除池能否一次都不排掉冠军”。</p>
 <p><strong>纯 CCS 随机基准是命中率检验。</strong> 全历史淘汰路径样本中，同规模随机候选池期望命中 {context['historical_random_expected']} 个冠军；达到 {context['historical_champions_short']} 的精确概率是 {context['historical_random_prob']}，Monte Carlo 概率是 {context['historical_random_sim_prob']}。</p>
 <p><strong>严格排除随机基准是误伤检验。</strong> 脚本做 20 万次同规模随机重抽；模拟得到 0 次误排冠军的概率为 {context['path_random_zero_sim_prob']}，精确概率为 {context['path_random_zero_prob']}。</p>
@@ -1497,20 +1757,26 @@ def render_report_zh(context: dict) -> str:
 <div class="figure"><img src="{context['fig_sim_zh']}" alt="Strong-team permutation simulation"><div class="caption">这不是世界排名 simulation。它控制的是“CCS 本来就会和传统强队重叠”这件事，再检验具体的冠军链标签是否还有额外信息。</div></div>
 <div class="callout warn"><strong>解释边界：</strong> 这些 simulation 支持 CCS 是一个可信的筛选启发式，但尚不能证明它优于 Elo、赔率或多变量模型。下一步应检验相对于强基准的增量价值。</div>
 
-<h2>5. 赛前使用体验：哪些强队/豪门应被 CCS 降权</h2>
+<h2>6. 赛前使用体验：哪些强队/豪门应被 CCS 降权</h2>
 <p><strong>这是最容易让读者理解的方法使用场景。</strong> 开赛前，一支球队可以排名很高、历史声望很强、舆论很热，但仍然缺少最近两届的冠军链连接。主图从“FIFA Top 20 且非 CCS”的审计池里人工策展，重点保留今天读者也会自然认为与冠军叙事相关的强队：阿根廷、德国、英格兰、西班牙、葡萄牙、荷兰、比利时、哥伦比亚、克罗地亚、乌拉圭。</p>
 <div class="figure"><img src="{context['fig_traps_zh']}" alt="Recognizable non-CCS title contenders"><div class="caption">样本来自开赛前 FIFA Top 20 且非 CCS 的入围队；主图展示人工策展的强队/豪门清单。完整机械 Top 20 审计表保留在 data/derived/favorite_traps.csv；策展清单保留在 data/derived/favorite_trap_powerhouses.csv。</div></div>
 {traps_html}
 <p><strong>这个信号有用，但不是绝对排除。</strong> 非 CCS 强队可以走很远：2002 德国、2010 荷兰、2014 阿根廷都进入决赛。更准确的结论是：现代样本里，最终冠军几乎总来自 CCS 一侧。</p>
 
-<h2>6. 2026 应用：区分排名强与冠军链强</h2>
+<h2>7. 2026 应用：区分排名强与冠军链强</h2>
 <p><strong>2026 是实时应用场景，不是回测结果。</strong> 本报告将排名快照冻结在 FIFA 2026 年 6 月 11 日官方排名，并使用 FIFA 2026 赛季接口中的入围队名单。最直接的赛前结论是：西班牙、葡萄牙、巴西、德国、哥伦比亚，都是排名强、声望强，但开赛前非 CCS 的豪强。</p>
 {downgrade_2026_html}
 <p>下方完整观察表保留头部排名上下文，避免把 2026 的降权判断藏在人工挑选名单里。</p>
 <div class="figure"><img src="{context['fig_2026_zh']}" alt="2026 ranked non-CCS contenders"><div class="caption">2026 已入围球队中五支高声望但非 CCS 的豪强；下方表格保留更完整的头部排名上下文。</div></div>
 {watch_html}
 
-<h2>7. 为什么会这样：强队重要，但路径也重要</h2>
+<h2>8. 强队惯性基准：上届四强/八强并不够</h2>
+<p><strong>这是回答“CCS 会不会只是强队惯性”的最直接对照。</strong> 朴素规则确实有信息量：上届八强明显不是随机信号。但它的冠军覆盖远低于 CCS；而连续两届八强/四强又过窄，会漏掉大量真实冠军。</p>
+<div class="figure"><img src="{context['fig_inertia_zh']}" alt="Strength inertia benchmark"><div class="caption">覆盖率使用同一个 1938-2022 可判定历史分母。八强口径把 1974/1978/1982 第二阶段小组视为争冠阶段。</div></div>
+{inertia_html}
+<p><strong>关键在漏掉了谁。</strong> 上届八强会漏掉 1998 法国、2006 意大利、2010 西班牙、2022 阿根廷；连续两届八强还会漏掉 2018 法国。CCS 不是简单复制上一届成绩，而是在识别更宽的冠军链关系。</p>
+
+<h2>9. 为什么会这样：强队重要，但路径也重要</h2>
 <p><strong>首先要承认，CCS 确实部分捕捉了强队效应。</strong> 冠军、亚军，以及被冠亚军淘汰的球队，本来就往往是强队。因此 CCS 与 FIFA 排名、赔率、历史声望存在天然重叠。</p>
 <p><strong>但 CCS 并不等同于“经常入围”或“排名很高”。</strong> 它要求球队在最近两届与冠军路径发生过具体关系：自己夺冠，或被最终冠亚军淘汰。一个队可以排名高、经常参赛、甚至进过 8 强，但如果没有触碰冠军路径，仍然可能是非 CCS。</p>
 <p><strong>更合理的机制解释是“锦标赛周期验证”。</strong> 最近两届与冠军链发生联系，意味着球队已经在世界杯淘汰赛强度下被冠军级对手验证过。这不是因果证明，而是一个紧凑的历史状态变量；它对冠军列尤其有解释力。</p>
@@ -1522,13 +1788,6 @@ def render_report_zh(context: dict) -> str:
 <li><strong>固定 2026 赛前版本，赛后再评估。</strong> 不应随着赛果移动口径；应冻结赛前 CCS/排名表，等比赛结束后统一复盘。</li>
 </ol>
 
-<h2>待回答问题</h2>
-<ul>
-<li>控制 Elo 或赔率后，CCS 是否仍有预测增量？</li>
-<li>回看 1 届、2 届还是 3 届最优？是否存在过拟合？</li>
-<li>主办国、阵容周期突变、无前史样本，是否应建立单独 override 规则？</li>
-</ul>
-
 <h2>限制与假设</h2>
 <ul>
 <li>主结论使用的是球队-届次，不是唯一国家队；同一国家在多个周期满足条件，会被计为多个样本点。</li>
@@ -1536,7 +1795,9 @@ def render_report_zh(context: dict) -> str:
 <li>1974、1978、1982 的第二阶段小组视为争冠阶段，因为这些年份采用混合赛制，不是现代淘汰赛签表。</li>
 <li>随机基准是同规模随机排除的精确概率计算；Monte Carlo simulation 只是复核这个乘法，不是黑箱模型。</li>
 <li>强队标签置换 simulation 仍是 1998-2022 的现代控制实验，不是全历史 simulation，因为它依赖一致的现代排名语境和人工冠军叙事标签。</li>
+<li>报告已补充上届四强、上届八强、连续两届四强、连续两届八强四个强队惯性基准。它们适合作为对照，不适合作为 CCS 替代品。</li>
 <li>FIFA 排名只是轻量公开审计变量；赔率与 Elo 是下一步更强基准。</li>
+<li>Elo 与赔率控制需要额外历史外部数据源，不在当前可复现仓库快照内；本版把它们保留为下一版模型基准，而不是报告内未完成事项。</li>
 <li>2026 观察清单不使用 2026 赛果；排名快照冻结在 2026 年 6 月 11 日。</li>
 </ul>
 
@@ -1562,6 +1823,8 @@ def main() -> None:
     historical_random = random_benchmark_from_summary(historical_summary, "historical_random_benchmark.csv")
     joined = build_favorite_traps(team_year, rankings)
     permutation_detail, permutation_summary = contender_permutation_benchmark(joined, modern)
+    inertia_detail, inertia_summary = strength_inertia_benchmark(historical_team_year, historical_summary)
+    scope_metrics = ccs_scope_metrics(historical_team_year, historical_summary, modern)
     traps = pd.read_csv(DATA_DERIVED / "favorite_traps.csv")
     trap_headliners = pd.read_csv(DATA_DERIVED / "favorite_trap_headliners.csv")
     trap_powerhouses = pd.read_csv(DATA_DERIVED / "favorite_trap_powerhouses.csv")
@@ -1596,6 +1859,9 @@ def main() -> None:
             & path_summary["champion_path_contact"].eq(1)
         ).sum()
     )
+    inertia_hist = inertia_summary[inertia_summary["scope"].eq("historical_1938_2022")].set_index("signal")
+    prev_top8_hist = inertia_hist.loc["previous_top8"]
+    two_top8_hist = inertia_hist.loc["two_straight_top8"]
 
     context = {
         "ccs_pool_share": pct(total_ccs / total_participants),
@@ -1632,6 +1898,9 @@ def main() -> None:
         "random_prob": f"{random_df['prob_random_ge_9_of_10'].iloc[0]:.3%}",
         "strong_sim_expected": f"{permutation_summary.loc[permutation_summary['scope'].eq('evaluable_ex_france_1998'), 'expected_permutation_hits'].iloc[0]:.1f}",
         "strong_sim_prob": f"{permutation_summary.loc[permutation_summary['scope'].eq('evaluable_ex_france_1998'), 'probability_ge_actual_exact'].iloc[0]:.1%}",
+        "prev_top8_hist": f"{int(prev_top8_hist['champion_hits'])}/{int(prev_top8_hist['champions_considered'])}",
+        "two_top8_hist": f"{int(two_top8_hist['champion_hits'])}/{int(two_top8_hist['champions_considered'])}",
+        **scope_metrics,
         "fig_history_en": chart_historical_scope(path_summary, format_scope, "en"),
         "fig_pure_random_en": chart_pure_ccs_random_benchmark(historical_summary, historical_random, "en"),
         "fig_funnel_en": chart_modern_funnel(modern, "en"),
@@ -1639,6 +1908,7 @@ def main() -> None:
         "fig_traps_en": chart_favorite_traps(trap_powerhouses, "en"),
         "fig_2026_en": chart_2026_watchlist(downgrade_2026, "en"),
         "fig_sim_en": chart_contender_permutation(permutation_summary, "en"),
+        "fig_inertia_en": chart_strength_inertia(inertia_summary, "en"),
         "fig_history_zh": chart_historical_scope(path_summary, format_scope, "zh"),
         "fig_pure_random_zh": chart_pure_ccs_random_benchmark(historical_summary, historical_random, "zh"),
         "fig_funnel_zh": chart_modern_funnel(modern, "zh"),
@@ -1646,6 +1916,7 @@ def main() -> None:
         "fig_traps_zh": chart_favorite_traps(trap_powerhouses, "zh"),
         "fig_2026_zh": chart_2026_watchlist(downgrade_2026, "zh"),
         "fig_sim_zh": chart_contender_permutation(permutation_summary, "zh"),
+        "fig_inertia_zh": chart_strength_inertia(inertia_summary, "zh"),
         "historical_team_year": historical_team_year,
         "historical_summary": historical_summary,
         "path_detail": path_detail,
@@ -1658,6 +1929,8 @@ def main() -> None:
         "trap_powerhouses": trap_powerhouses,
         "permutation_detail": permutation_detail,
         "permutation_summary": permutation_summary,
+        "strength_inertia_detail": inertia_detail,
+        "strength_inertia_summary": inertia_summary,
         "watch_2026": watch,
         "downgrade_2026": downgrade_2026,
     }

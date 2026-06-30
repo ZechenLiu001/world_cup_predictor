@@ -1,0 +1,77 @@
+year,champion,signal,label_en,label_zh,lookback_years,candidate_pool,qualified_candidate_pool,qualified_pool_size,participants,champion_hit,random_hit_probability
+1938,Italy,previous_top4,Previous top four,上届四强,1934,Austria;Czechoslovakia;Germany;Italy,Czechoslovakia;Germany;Italy,3,15,1,0.2
+1938,Italy,previous_top8,Previous top eight,上届八强/争冠阶段,1934,Austria;Czechoslovakia;Germany;Hungary;Italy;Spain;Sweden;Switzerland,Czechoslovakia;Germany;Hungary;Italy;Sweden;Switzerland,6,15,1,0.4
+1938,Italy,two_straight_top4,Two straight top fours,连续两届四强,1930;1934,,,0,15,0,0.0
+1938,Italy,two_straight_top8,Two straight top eights,连续两届八强/争冠阶段,1930;1934,,,0,15,0,0.0
+1954,Germany,previous_top4,Previous top four,上届四强,1938,Brazil;Hungary;Italy;Sweden,Brazil;Hungary;Italy,3,16,0,0.1875
+1954,Germany,previous_top8,Previous top eight,上届八强/争冠阶段,1938,Brazil;Cuba;Czechoslovakia;France;Hungary;Italy;Sweden;Switzerland,Brazil;Czechoslovakia;France;Hungary;Italy;Switzerland,6,16,0,0.375
+1954,Germany,two_straight_top4,Two straight top fours,连续两届四强,1934;1938,Italy,Italy,1,16,0,0.0625
+1954,Germany,two_straight_top8,Two straight top eights,连续两届八强/争冠阶段,1934;1938,Czechoslovakia;Hungary;Italy;Sweden;Switzerland,Czechoslovakia;Hungary;Italy;Switzerland,4,16,0,0.25
+1958,Brazil,previous_top4,Previous top four,上届四强,1954,Austria;Germany;Hungary;Uruguay,Austria;Germany;Hungary,3,16,0,0.1875
+1958,Brazil,previous_top8,Previous top eight,上届八强/争冠阶段,1954,Austria;Brazil;England;Germany;Hungary;Switzerland;Uruguay;Yugoslavia,Austria;Brazil;England;Germany;Hungary;Yugoslavia,6,16,1,0.375
+1958,Brazil,two_straight_top4,Two straight top fours,连续两届四强,1938;1954,Hungary,Hungary,1,16,0,0.0625
+1958,Brazil,two_straight_top8,Two straight top eights,连续两届八强/争冠阶段,1938;1954,Brazil;Hungary;Switzerland,Brazil;Hungary,2,16,1,0.125
+1962,Brazil,previous_top4,Previous top four,上届四强,1958,Brazil;France;Germany;Sweden,Brazil;Germany,2,16,1,0.125
+1962,Brazil,previous_top8,Previous top eight,上届八强/争冠阶段,1958,Brazil;France;Germany;Northern Ireland;Soviet Union;Sweden;Wales;Yugoslavia,Brazil;Germany;Soviet Union;Yugoslavia,4,16,1,0.25
+1962,Brazil,two_straight_top4,Two straight top fours,连续两届四强,1954;1958,Germany,Germany,1,16,0,0.0625
+1962,Brazil,two_straight_top8,Two straight top eights,连续两届八强/争冠阶段,1954;1958,Brazil;Germany;Yugoslavia,Brazil;Germany;Yugoslavia,3,16,1,0.1875
+1966,England,previous_top4,Previous top four,上届四强,1962,Brazil;Chile;Czechoslovakia;Yugoslavia,Brazil;Chile,2,16,0,0.125
+1966,England,previous_top8,Previous top eight,上届八强/争冠阶段,1962,Brazil;Chile;Czechoslovakia;England;Germany;Hungary;Soviet Union;Yugoslavia,Brazil;Chile;England;Germany;Hungary;Soviet Union,6,16,1,0.375
+1966,England,two_straight_top4,Two straight top fours,连续两届四强,1958;1962,Brazil,Brazil,1,16,0,0.0625
+1966,England,two_straight_top8,Two straight top eights,连续两届八强/争冠阶段,1958;1962,Brazil;Germany;Soviet Union;Yugoslavia,Brazil;Germany;Soviet Union,3,16,0,0.1875
+1970,Brazil,previous_top4,Previous top four,上届四强,1966,England;Germany;Portugal;Soviet Union,England;Germany;Soviet Union,3,16,0,0.1875
+1970,Brazil,previous_top8,Previous top eight,上届八强/争冠阶段,1966,Argentina;England;Germany;Hungary;North Korea;Portugal;Soviet Union;Uruguay,England;Germany;Soviet Union;Uruguay,4,16,0,0.25
+1970,Brazil,two_straight_top4,Two straight top fours,连续两届四强,1962;1966,,,0,16,0,0.0
+1970,Brazil,two_straight_top8,Two straight top eights,连续两届八强/争冠阶段,1962;1966,England;Germany;Hungary;Soviet Union,England;Germany;Soviet Union,3,16,0,0.1875
+1974,Germany,previous_top4,Previous top four,上届四强,1970,Brazil;Germany;Italy;Uruguay,Brazil;Germany;Italy;Uruguay,4,16,1,0.25
+1974,Germany,previous_top8,Previous top eight,上届八强/争冠阶段,1970,Brazil;England;Germany;Italy;Mexico;Peru;Soviet Union;Uruguay,Brazil;Germany;Italy;Uruguay,4,16,1,0.25
+1974,Germany,two_straight_top4,Two straight top fours,连续两届四强,1966;1970,Germany,Germany,1,16,1,0.0625
+1974,Germany,two_straight_top8,Two straight top eights,连续两届八强/争冠阶段,1966;1970,England;Germany;Soviet Union;Uruguay,Germany;Uruguay,2,16,1,0.125
+1978,Argentina,previous_top4,Previous top four,上届四强,1974,Brazil;Germany;Netherlands;Poland,Brazil;Germany;Netherlands;Poland,4,16,0,0.25
+1978,Argentina,previous_top8,Previous top eight,上届八强/争冠阶段,1974,Argentina;Brazil;East Germany;Germany;Netherlands;Poland;Sweden;Yugoslavia,Argentina;Brazil;Germany;Netherlands;Poland;Sweden,6,16,1,0.375
+1978,Argentina,two_straight_top4,Two straight top fours,连续两届四强,1970;1974,Brazil;Germany,Brazil;Germany,2,16,0,0.125
+1978,Argentina,two_straight_top8,Two straight top eights,连续两届八强/争冠阶段,1970;1974,Brazil;Germany,Brazil;Germany,2,16,0,0.125
+1982,Italy,previous_top4,Previous top four,上届四强,1978,Argentina;Brazil;Italy;Netherlands,Argentina;Brazil;Italy,3,24,1,0.125
+1982,Italy,previous_top8,Previous top eight,上届八强/争冠阶段,1978,Argentina;Austria;Brazil;Germany;Italy;Netherlands;Peru;Poland,Argentina;Austria;Brazil;Germany;Italy;Peru;Poland,7,24,1,0.2916666666666667
+1982,Italy,two_straight_top4,Two straight top fours,连续两届四强,1974;1978,Brazil;Netherlands,Brazil,1,24,0,0.041666666666666664
+1982,Italy,two_straight_top8,Two straight top eights,连续两届八强/争冠阶段,1974;1978,Argentina;Brazil;Germany;Netherlands;Poland,Argentina;Brazil;Germany;Poland,4,24,0,0.16666666666666666
+1986,Argentina,previous_top4,Previous top four,上届四强,1982,France;Germany;Italy;Poland,France;Germany;Italy;Poland,4,24,0,0.16666666666666666
+1986,Argentina,previous_top8,Previous top eight,上届八强/争冠阶段,1982,Argentina;Austria;Belgium;Brazil;England;France;Germany;Italy;Northern Ireland;Poland;Soviet Union;Spain,Argentina;Belgium;Brazil;England;France;Germany;Italy;Northern Ireland;Poland;Soviet Union;Spain,11,24,1,0.4583333333333333
+1986,Argentina,two_straight_top4,Two straight top fours,连续两届四强,1978;1982,Italy,Italy,1,24,0,0.041666666666666664
+1986,Argentina,two_straight_top8,Two straight top eights,连续两届八强/争冠阶段,1978;1982,Argentina;Austria;Brazil;Germany;Italy;Poland,Argentina;Brazil;Germany;Italy;Poland,5,24,1,0.20833333333333334
+1990,Germany,previous_top4,Previous top four,上届四强,1986,Argentina;Belgium;France;Germany,Argentina;Belgium;Germany,3,24,1,0.125
+1990,Germany,previous_top8,Previous top eight,上届八强/争冠阶段,1986,Argentina;Belgium;Brazil;England;France;Germany;Mexico;Spain,Argentina;Belgium;Brazil;England;Germany;Spain,6,24,1,0.25
+1990,Germany,two_straight_top4,Two straight top fours,连续两届四强,1982;1986,France;Germany,Germany,1,24,1,0.041666666666666664
+1990,Germany,two_straight_top8,Two straight top eights,连续两届八强/争冠阶段,1982;1986,Argentina;Belgium;Brazil;England;France;Germany;Spain,Argentina;Belgium;Brazil;England;Germany;Spain,6,24,1,0.25
+1994,Brazil,previous_top4,Previous top four,上届四强,1990,Argentina;England;Germany;Italy,Argentina;Germany;Italy,3,24,0,0.125
+1994,Brazil,previous_top8,Previous top eight,上届八强/争冠阶段,1990,Argentina;Cameroon;Czechoslovakia;England;Germany;Italy;Republic of Ireland;Yugoslavia,Argentina;Cameroon;Germany;Italy;Republic of Ireland,5,24,0,0.20833333333333334
+1994,Brazil,two_straight_top4,Two straight top fours,连续两届四强,1986;1990,Argentina;Germany,Argentina;Germany,2,24,0,0.08333333333333333
+1994,Brazil,two_straight_top8,Two straight top eights,连续两届八强/争冠阶段,1986;1990,Argentina;England;Germany,Argentina;Germany,2,24,0,0.08333333333333333
+1998,France,previous_top4,Previous top four,上届四强,1994,Brazil;Bulgaria;Italy;Sweden,Brazil;Bulgaria;Italy,3,32,0,0.09375
+1998,France,previous_top8,Previous top eight,上届八强/争冠阶段,1994,Brazil;Bulgaria;Germany;Italy;Netherlands;Romania;Spain;Sweden,Brazil;Bulgaria;Germany;Italy;Netherlands;Romania;Spain,7,32,0,0.21875
+1998,France,two_straight_top4,Two straight top fours,连续两届四强,1990;1994,Italy,Italy,1,32,0,0.03125
+1998,France,two_straight_top8,Two straight top eights,连续两届八强/争冠阶段,1990;1994,Germany;Italy,Germany;Italy,2,32,0,0.0625
+2002,Brazil,previous_top4,Previous top four,上届四强,1998,Brazil;Croatia;France;Netherlands,Brazil;Croatia;France,3,32,1,0.09375
+2002,Brazil,previous_top8,Previous top eight,上届八强/争冠阶段,1998,Argentina;Brazil;Croatia;Denmark;France;Germany;Italy;Netherlands,Argentina;Brazil;Croatia;Denmark;France;Germany;Italy,7,32,1,0.21875
+2002,Brazil,two_straight_top4,Two straight top fours,连续两届四强,1994;1998,Brazil,Brazil,1,32,1,0.03125
+2002,Brazil,two_straight_top8,Two straight top eights,连续两届八强/争冠阶段,1994;1998,Brazil;Germany;Italy;Netherlands,Brazil;Germany;Italy,3,32,1,0.09375
+2006,Italy,previous_top4,Previous top four,上届四强,2002,Brazil;Germany;South Korea;Turkey,Brazil;Germany;South Korea,3,32,0,0.09375
+2006,Italy,previous_top8,Previous top eight,上届八强/争冠阶段,2002,Brazil;England;Germany;Senegal;South Korea;Spain;Turkey;USA,Brazil;England;Germany;South Korea;Spain;USA,6,32,0,0.1875
+2006,Italy,two_straight_top4,Two straight top fours,连续两届四强,1998;2002,Brazil,Brazil,1,32,0,0.03125
+2006,Italy,two_straight_top8,Two straight top eights,连续两届八强/争冠阶段,1998;2002,Brazil;Germany,Brazil;Germany,2,32,0,0.0625
+2010,Spain,previous_top4,Previous top four,上届四强,2006,France;Germany;Italy;Portugal,France;Germany;Italy;Portugal,4,32,0,0.125
+2010,Spain,previous_top8,Previous top eight,上届八强/争冠阶段,2006,Argentina;Brazil;England;France;Germany;Italy;Portugal;Ukraine,Argentina;Brazil;England;France;Germany;Italy;Portugal,7,32,0,0.21875
+2010,Spain,two_straight_top4,Two straight top fours,连续两届四强,2002;2006,Germany,Germany,1,32,0,0.03125
+2010,Spain,two_straight_top8,Two straight top eights,连续两届八强/争冠阶段,2002;2006,Brazil;England;Germany,Brazil;England;Germany,3,32,0,0.09375
+2014,Germany,previous_top4,Previous top four,上届四强,2010,Germany;Netherlands;Spain;Uruguay,Germany;Netherlands;Spain;Uruguay,4,32,1,0.125
+2014,Germany,previous_top8,Previous top eight,上届八强/争冠阶段,2010,Argentina;Brazil;Germany;Ghana;Netherlands;Paraguay;Spain;Uruguay,Argentina;Brazil;Germany;Ghana;Netherlands;Spain;Uruguay,7,32,1,0.21875
+2014,Germany,two_straight_top4,Two straight top fours,连续两届四强,2006;2010,Germany,Germany,1,32,1,0.03125
+2014,Germany,two_straight_top8,Two straight top eights,连续两届八强/争冠阶段,2006;2010,Argentina;Brazil;Germany,Argentina;Brazil;Germany,3,32,1,0.09375
+2018,France,previous_top4,Previous top four,上届四强,2014,Argentina;Brazil;Germany;Netherlands,Argentina;Brazil;Germany,3,32,0,0.09375
+2018,France,previous_top8,Previous top eight,上届八强/争冠阶段,2014,Argentina;Belgium;Brazil;Colombia;Costa Rica;France;Germany;Netherlands,Argentina;Belgium;Brazil;Colombia;Costa Rica;France;Germany,7,32,1,0.21875
+2018,France,two_straight_top4,Two straight top fours,连续两届四强,2010;2014,Germany;Netherlands,Germany,1,32,0,0.03125
+2018,France,two_straight_top8,Two straight top eights,连续两届八强/争冠阶段,2010;2014,Argentina;Brazil;Germany;Netherlands,Argentina;Brazil;Germany,3,32,0,0.09375
+2022,Argentina,previous_top4,Previous top four,上届四强,2018,Belgium;Croatia;England;France,Belgium;Croatia;England;France,4,32,0,0.125
+2022,Argentina,previous_top8,Previous top eight,上届八强/争冠阶段,2018,Belgium;Brazil;Croatia;England;France;Russia;Sweden;Uruguay,Belgium;Brazil;Croatia;England;France;Uruguay,6,32,0,0.1875
+2022,Argentina,two_straight_top4,Two straight top fours,连续两届四强,2014;2018,,,0,32,0,0.0
+2022,Argentina,two_straight_top8,Two straight top eights,连续两届八强/争冠阶段,2014;2018,Belgium;Brazil;France,Belgium;Brazil;France,3,32,0,0.09375
